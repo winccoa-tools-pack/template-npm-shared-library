@@ -1,4 +1,4 @@
-# PR labeler configuration
+# PR labeler configuration (actions/labeler v6)
 # Adjust patterns to match your repository structure
 frontend:
   - paths:
