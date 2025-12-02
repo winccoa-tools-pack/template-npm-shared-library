@@ -1,0 +1,14 @@
+# PR labeler configuration
+# Adjust patterns to match your repository structure
+frontend:
+  - 'src/**'
+
+ci:
+  - '.github/workflows/**'
+
+docs:
+  - 'README.md'
+  - 'docs/**'
+
+tests:
+  - 'test/**'
