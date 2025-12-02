@@ -1,11 +1,13 @@
 {
   "name": "@winccoa-tools-pack/core-utils",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "winccoa-tools-pack",
   "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc --build",
     "test": "npm run build && node test/core-utils.test.js",
