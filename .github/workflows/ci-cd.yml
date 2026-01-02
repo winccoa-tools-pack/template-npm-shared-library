@@ -64,7 +64,7 @@ jobs:
       run: npm run build
         
     - name: Upload package as artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: npm-package-${{ github.sha }}
         path: |
