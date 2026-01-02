@@ -41,7 +41,7 @@ body:
       label: Steps to Reproduce
       description: Steps to reproduce the behavior
       placeholder: |
-        In best case a small script to reproduce the behavior
+        In best case a small script to reproduce the behavior.
     validations:
       required: true
 
