@@ -41,10 +41,7 @@ body:
       label: Steps to Reproduce
       description: Steps to reproduce the behavior
       placeholder: |
-        1. Go to '...'
-        2. Click on '...'
-        3. Scroll down to '...'
-        4. See error
+        In best case provide a short test script to simulate the bug
     validations:
       required: true
 
