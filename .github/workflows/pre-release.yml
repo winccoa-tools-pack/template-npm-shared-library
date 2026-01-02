@@ -152,7 +152,7 @@ jobs:
                   echo "### 🔍 Testing Notes:" >> temp_changelog.md
                   echo "- This is a **pre-release** version from the develop branch" >> temp_changelog.md
                   echo "- Use for testing and validation purposes only" >> temp_changelog.md
-                  echo "- Report issues at: https://github.com/mPokornyETM/vs-code-wincc-oa-projects-viewer/issues" >> temp_changelog.md
+                  echo "- Report issues at: https://github.com/winccoa-tools-pack/${{ github.repository }}/issues/" >> temp_changelog.md
 
                   # Read changelog content
                   CHANGELOG_CONTENT=$(cat temp_changelog.md)
@@ -193,7 +193,7 @@ jobs:
               run: npm run build
 
             - name: Upload Package Artifact
-              uses: actions/upload-artifact@v5
+              uses: actions/upload-artifact@v6
               with:
                   name: pre-release-${{ steps.release.outputs.version }}
                   path: |
@@ -226,13 +226,13 @@ jobs:
                       Install the pre-release version:
 
                       ```bash
-                      npm install @winccoa-tools-pack/npm-winccoa-core@${{ steps.release.outputs.version }}
+                      npm install @winccoa-tools-pack/${{ github.repository }}@${{ steps.release.outputs.version }}
                       ```
 
                       Or with Yarn:
 
                       ```bash
-                      yarn add @winccoa-tools-pack/npm-winccoa-core@${{ steps.release.outputs.version }}
+                      yarn add @winccoa-tools-pack/${{ github.repository }}@${{ steps.release.outputs.version }}
                       ```
 
                       ### 🔄 Feedback

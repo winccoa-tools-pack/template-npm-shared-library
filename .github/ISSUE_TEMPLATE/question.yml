@@ -48,13 +48,6 @@ body:
         - What have you already tried?
         - What specific part are you stuck on?
 
-  - type: input
-    id: extension-version
-    attributes:
-      label: Extension Version
-      description: What version of the WinCC OA extension are you using?
-      placeholder: "e.g., 1.0.0"
-
   - type: dropdown
     id: winccoa-version
     attributes:

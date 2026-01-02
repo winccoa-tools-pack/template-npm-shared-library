@@ -1,13 +1,8 @@
-export function log(message: string): void {
-  console.log(`[core-utils] ${message}`);
-}
+/**
+ * WinCC OA Core Utilities
+ * Platform-agnostic utilities for WinCC OA automation
+ */
 
-export function validateConfig(config: unknown): boolean {
-  return typeof config === 'object' && config !== null;
-}
-
-export async function getExtensions(): Promise<Array<{name: string; description?: string}>> {
-  return [
-    { name: 'winccoa-tools-pack/core-utils', description: 'Shared utilities' }
-  ];
-}
+// Export all utilities
+export * from './utils/index.js';
+export * from './types/index.js';

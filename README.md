@@ -1,6 +1,6 @@
 # NPM Shared Library Template
 
-Minimal starter template for creating shared npm libraries with Git Flow workflow.
+Minimal starter template for creating shared npm libraries.
 
 ## 🚀 Quick Start
 

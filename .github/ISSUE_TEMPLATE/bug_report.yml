@@ -41,10 +41,7 @@ body:
       label: Steps to Reproduce
       description: Steps to reproduce the behavior
       placeholder: |
-        1. Go to '...'
-        2. Click on '...'
-        3. Scroll down to '...'
-        4. See error
+        In best case a small script to reproduce the behavior
     validations:
       required: true
 
@@ -70,31 +67,6 @@ body:
       placeholder: Paste error messages, stack traces, or log output here
       render: text
 
-  - type: textarea
-    id: screenshots
-    attributes:
-      label: Screenshots
-      description: If applicable, add screenshots to help explain your problem
-      placeholder: You can paste screenshots directly here
-
-  - type: input
-    id: extension-version
-    attributes:
-      label: Extension Version
-      description: What version of the WinCC OA extension are you using?
-      placeholder: "e.g., 1.0.0"
-    validations:
-      required: true
-
-  - type: input
-    id: vscode-version
-    attributes:
-      label: VS Code Version
-      description: What version of VS Code are you using?
-      placeholder: "e.g., 1.94.0"
-    validations:
-      required: true
-
   - type: dropdown
     id: winccoa-version
     attributes:
@@ -117,9 +89,8 @@ body:
       description: What operating system are you using?
       options:
         - Windows 11
-        - Windows 10
         - Windows Server 2022
-        - Windows Server 2019
+        - Windows Server 2025
         - Linux (specify in additional context)
         - Other
     validations:
