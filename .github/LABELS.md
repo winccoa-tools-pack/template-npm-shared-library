@@ -159,4 +159,4 @@ Track project health using label metrics:
 
 ---
 
-_This label system helps maintain organization and visibility across the entire WinCC OA VS Code Extension project lifecycle._
+_This label system helps maintain organization and visibility across the entire WinCC OA NPM shared library project lifecycle._

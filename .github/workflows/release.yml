@@ -1,9 +1,14 @@
 name: Release
 
 on:
-    pull_request:
-        types: [closed]
-        branches: [main, master]
+    workflow_run:
+        workflows:
+            - "CI/CD Pipeline"
+            - "Integration Tests - WinCC OA"
+        types:
+            - completed
+        branches:
+            - main
     workflow_dispatch:
         inputs:
             release_type:
@@ -25,45 +30,12 @@ permissions:
     issues: write
 
 jobs:
-    test:
-        runs-on: ubuntu-latest
-
-        strategy:
-            matrix:
-                node-version: [18.x, 20.x, 22.x]
-
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v6
-              with:
-                  fetch-depth: 0
-                  token: ${{ secrets.GITHUB_TOKEN }}
-
-            - name: Use Node.js ${{ matrix.node-version }}
-              uses: actions/setup-node@v6
-              with:
-                  node-version: ${{ matrix.node-version }}
-                  cache: "npm"
-
-            - name: Install dependencies
-              run: npm ci
-
-            - name: Build package
-              run: npm run build
-
-            - name: Run tests
-              run: npm test
-              env:
-                  CI: true
-
     release:
         runs-on: ubuntu-latest
-        needs: test
-        # Only run on merged release PRs or manual workflow dispatch
+        # Only run if the triggering workflow succeeded or manual dispatch
         if: |
             github.event_name == 'workflow_dispatch' ||
-            (github.event.pull_request.merged == true &&
-             (startsWith(github.head_ref, 'release/') || contains(github.event.pull_request.labels.*.name, 'release')))
+            github.event.workflow_run.conclusion == 'success'
         outputs:
             version: ${{ steps.release.outputs.version }}
             changelog: ${{ steps.changelog.outputs.changelog }}
@@ -82,7 +54,7 @@ jobs:
                   cache: "npm"
 
             - name: Install dependencies
-              run: npm ci
+              run: npm install && npm ci
 
             - name: Configure Git
               run: |
@@ -354,13 +326,13 @@ jobs:
                       ### 📦 Installation
 
                       ```bash
-                      npm install @winccoa-tools-pack/core-utils@${{ steps.release.outputs.version }}
+                      npm install @winccoa-tools-pack/npm-winccoa-core@${{ steps.release.outputs.version }}
                       ```
 
                       Or with Yarn:
 
                       ```bash
-                      yarn add @winccoa-tools-pack/core-utils@${{ steps.release.outputs.version }}
+                      yarn add @winccoa-tools-pack/npm-winccoa-core@${{ steps.release.outputs.version }}
                       ```
 
                       ### 🔗 Links
@@ -377,7 +349,7 @@ jobs:
 
     publish-npm:
         runs-on: ubuntu-latest
-        needs: [test, release]
+        needs: [release]
         if: success()
 
         steps:
@@ -395,7 +367,7 @@ jobs:
                   registry-url: "https://registry.npmjs.org"
 
             - name: Install dependencies
-              run: npm ci
+              run: npm install && npm ci
 
             - name: Build package
               run: npm run build
@@ -416,7 +388,7 @@ jobs:
                   # Only publish if NPM_TOKEN is available
                   if [ -n "${{ secrets.NPM_TOKEN }}" ]; then
                     echo "📦 Publishing to NPM Registry..."
-                    echo "  📋 Package: @winccoa-tools-pack/core-utils"
+                    echo "  📋 Package: @winccoa-tools-pack/npm-winccoa-core"
                     echo "  🏷️ Version: $PACKAGE_VERSION"
                     echo "  🎯 Registry: https://registry.npmjs.org"
 
@@ -424,7 +396,7 @@ jobs:
                     npm publish --access public
 
                     echo "✅ Published to NPM successfully!"
-                    echo "🔗 NPM URL: https://www.npmjs.com/package/@winccoa-tools-pack/core-utils"
+                    echo "🔗 NPM URL: https://www.npmjs.com/package/@winccoa-tools-pack/npm-winccoa-core"
                   else
                     echo "⚠️ NPM_TOKEN secret not found - skipping NPM publish"
                     echo "To enable NPM publishing:"
@@ -449,4 +421,4 @@ jobs:
                   echo "📝 Changelog updated automatically"
                   echo ""
                   echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.release.outputs.version }}"
-                  echo "🔗 NPM URL: https://www.npmjs.com/package/@winccoa-tools-pack/core-utils"
+                  echo "🔗 NPM URL: https://www.npmjs.com/package/@winccoa-tools-pack/npm-winccoa-core"

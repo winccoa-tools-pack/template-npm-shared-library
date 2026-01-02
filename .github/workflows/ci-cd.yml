@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ develop, feature/*, release/*, hotfix/* ]
+    branches: [ develop ]
   pull_request:
     branches: [ main, develop ]
 
@@ -16,7 +16,7 @@ jobs:
     
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [20.x, 22.x]
         
     steps:
     - name: Checkout repository
@@ -34,11 +34,14 @@ jobs:
     - name: Build package
       run: npm run build
       
-    - name: Run tests
-      run: npm test
+    - name: Run style checks
+      run: npm run style-check
+      
+    - name: Run unit tests
+      run: npm run test:unit
       env:
         CI: true
-
+        
   package:
     runs-on: ubuntu-latest
     needs: test
