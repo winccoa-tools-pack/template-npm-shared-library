@@ -7,6 +7,7 @@ Minimal starter template for creating shared npm libraries with Git Flow workflo
 ### Initial Setup
 
 1. **Create repository from this template**
+
    ```bash
    # Via GitHub CLI
    gh repo create winccoa-tools-pack/<your-library-name> \
@@ -15,19 +16,18 @@ Minimal starter template for creating shared npm libraries with Git Flow workflo
    ```
 
 2. **Clone and initialize Git Flow**
+
    ```bash
    git clone https://github.com/winccoa-tools-pack/<your-library-name>
    cd <your-library-name>
-   
-   # Run the setup script (PowerShell)
-   .\setup-gitflow.ps1
-   
-   # Or manually
+
+   # Initialize Git Flow locally (if you use the git-flow tool)
    git flow init -d
    git push -u origin develop
    ```
 
 3. **Install dependencies and build**
+
    ```bash
    npm install
    npm run build

@@ -1,17 +1,69 @@
 {
-  "name": "@winccoa-tools-pack/core-utils",
+  "name": "@winccoa-tools-pack/npm-winccoa-core",
   "version": "0.1.0",
   "author": "winccoa-tools-pack",
   "license": "MIT",
-  "main": "dist/index.js",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./utils/*": {
+      "import": "./dist/esm/utils/*.js",
+      "require": "./dist/cjs/utils/*.js",
+      "types": "./dist/utils/*.d.ts"
+    },
+    "./types/*": {
+      "import": "./dist/esm/types/*.js",
+      "require": "./dist/cjs/types/*.js",
+      "types": "./dist/types/*.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc --build",
-    "test": "npm run build && node test/core-utils.test.js",
-    "prepublishOnly": "npm run build"
+    "build:types": "tsc -p tsconfig.build.types.json",
+    "build:cjs": "tsc -p tsconfig.build.cjs.json",
+    "build:esm": "tsc -p tsconfig.build.esm.json",
+    "build": "npm run build:types && npm run build:cjs && npm run build:esm",
+    "compile": "tsc --build",
+    "prepublishOnly": "npm run build",
+    "lint": "eslint \"src/**/*.ts\"",
+    "lint:fix": "eslint \"src/**/*.ts\" --fix",
+    "lint:md": "markdownlint \"**/*.md\" --ignore node_modules",
+    "lint:md:fix": "markdownlint \"**/*.md\" --ignore node_modules --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "style-check": "npm run lint && npm run format:check && npm run lint:md",
+    "style-fix": "npm run lint:fix && npm run format && npm run lint:md:fix",
+    "test": "npm run style-check && npm run build && npm run test:unit",
+    "test:unit": "node --import tsx --test --test-force-exit test/unit/*.test.ts test/unit/types/**/*.test.ts test/unit/utils/*.test.ts",
+    "test:integration": "node --import tsx --test --test-force-exit test/integration/*.test.ts",
+    "ci:integration": "npm ci && npm run build && npm run test:integration"
   },
   "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.29.1",
+    "markdownlint": "^0.28.0",
+    "markdownlint-cli": "^0.33.0",
+    "prettier": "^3.0.0",
+    "ts-node": "^10.9.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.2.0"
+  },
+  "overrides": {
+    "glob": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

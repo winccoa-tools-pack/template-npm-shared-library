@@ -1,13 +1,14 @@
 name: Pre-Release (Develop)
 
 on:
-    push:
+    workflow_run:
+        workflows:
+            - "CI/CD Pipeline"
+            - "Integration Tests - WinCC OA"
+        types:
+            - completed
         branches:
             - develop
-        paths-ignore:
-            - "**.md"
-            - ".github/**"
-            - "!.github/workflows/pre-release.yml"
     workflow_dispatch:
         inputs:
             pre_release_type:
@@ -31,40 +32,10 @@ permissions:
     # This requires repository admin access or using a PAT
 
 jobs:
-    test:
-        runs-on: ubuntu-latest
-
-        strategy:
-            matrix:
-                node-version: [18.x, 20.x, 22.x]
-
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v6
-              with:
-                  fetch-depth: 0
-                  token: ${{ secrets.GITHUB_TOKEN }}
-
-            - name: Use Node.js ${{ matrix.node-version }}
-              uses: actions/setup-node@v6
-              with:
-                  node-version: ${{ matrix.node-version }}
-                  cache: "npm"
-
-            - name: Install dependencies
-              run: npm ci
-
-            - name: Build package
-              run: npm run build
-
-            - name: Run tests
-              run: npm test
-              env:
-                  CI: true
-
     pre-release:
         runs-on: ubuntu-latest
-        needs: test
+        # Only run if the triggering workflow succeeded
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
         outputs:
             version: ${{ steps.release.outputs.version }}
             changelog: ${{ steps.changelog.outputs.changelog }}
@@ -83,7 +54,7 @@ jobs:
                   cache: "npm"
 
             - name: Install dependencies
-              run: npm ci
+              run: npm install && npm ci
 
             - name: Configure Git
               run: |
@@ -255,13 +226,13 @@ jobs:
                       Install the pre-release version:
 
                       ```bash
-                      npm install @winccoa-tools-pack/core-utils@${{ steps.release.outputs.version }}
+                      npm install @winccoa-tools-pack/npm-winccoa-core@${{ steps.release.outputs.version }}
                       ```
 
                       Or with Yarn:
 
                       ```bash
-                      yarn add @winccoa-tools-pack/core-utils@${{ steps.release.outputs.version }}
+                      yarn add @winccoa-tools-pack/npm-winccoa-core@${{ steps.release.outputs.version }}
                       ```
 
                       ### 🔄 Feedback
