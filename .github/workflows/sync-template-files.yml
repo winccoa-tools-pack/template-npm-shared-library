@@ -20,6 +20,7 @@ jobs:
       sync_mode:     "update"
       paths: |
         .github/ISSUE_TEMPLATE/**/*.yml
+        .github/workflows/sync-template-files.yml
 #        .github/ISSUE_TEMPLATE/**/*.yaml
       pr_title:  "chore(template): sync template files"
       pr_body:   "Automated sync from org template repository."
