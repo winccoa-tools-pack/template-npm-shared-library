@@ -1,5 +1,5 @@
 
-name: Sync organization files to repositories
+name: Sync template files to repositories
 
 on:
   schedule:
