@@ -54,7 +54,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.29.1",
     "markdownlint": "^0.28.0",
-    "markdownlint-cli": "^0.33.0",
+    "markdownlint-cli": "^0.47.0",
     "prettier": "^3.0.0",
     "ts-node": "^10.9.1",
     "tsx": "^4.21.0",
