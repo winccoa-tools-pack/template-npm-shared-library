@@ -193,7 +193,7 @@ jobs:
               run: npm run build
 
             - name: Upload Package Artifact
-              uses: actions/upload-artifact@v6
+              uses: actions/upload-artifact@v7
               with:
                   name: pre-release-${{ steps.release.outputs.version }}
                   path: |
