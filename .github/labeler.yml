@@ -1,19 +1,38 @@
 
 # .github/labeler.yml  — actions/labeler v6 schema
 
-frontend:
+source:
   - changed-files:
       - any-glob-to-any-file: 'src/**'
 
+cli:
+  - changed-files:
+      - any-glob-to-any-file: 'src/cli.ts'
+
 ci:
   - changed-files:
-      - any-glob-to-any-file: '.github/workflows/**'
+      - any-glob-to-any-file: '.github/**'
 
 docs:
   - changed-files:
       - any-glob-to-any-file: 'README.md'
+      - any-glob-to-any-file: 'CHANGELOG.md'
+      - any-glob-to-any-file: 'CONTRIBUTING.md'
       - any-glob-to-any-file: 'docs/**'
+      - any-glob-to-any-file: 'plan.md'
 
 tests:
   - changed-files:
       - any-glob-to-any-file: 'test/**'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file: 'package.json'
+      - any-glob-to-any-file: 'package-lock.json'
+
+config:
+  - changed-files:
+      - any-glob-to-any-file: 'tsconfig*.json'
+      - any-glob-to-any-file: 'eslint.config.*'
+      - any-glob-to-any-file: '.prettierrc*'
+      - any-glob-to-any-file: '.markdownlint*'

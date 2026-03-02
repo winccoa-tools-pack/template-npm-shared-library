@@ -1,13 +1,15 @@
-export function log(message: string): void {
-  console.log(`[core-utils] ${message}`);
-}
+/**
+ * WinCC OA UI PNL/XML Converter
+ *
+ * Provides reliable PNL ⇄ XML transformations for WinCC OA UI panels
+ * using the WCCOAui manager under the hood.
+ */
 
-export function validateConfig(config: unknown): boolean {
-  return typeof config === 'object' && config !== null;
-}
+// Types
+export { ConversionDirection, ConversionOptions, ConversionResult } from './types';
 
-export async function getExtensions(): Promise<Array<{name: string; description?: string}>> {
-  return [
-    { name: 'winccoa-tools-pack/core-utils', description: 'Shared utilities' }
-  ];
-}
+// Core converter
+export { PnlXmlConverter } from './converter';
+
+// Convenience API
+export { pnlToXml, xmlToPnl } from './api';

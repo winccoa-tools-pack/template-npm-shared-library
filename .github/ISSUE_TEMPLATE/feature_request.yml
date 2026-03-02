@@ -1,5 +1,5 @@
 name: 🚀 Feature Request
-description: Suggest a new feature for the WinCC OA VS Code Extension
+description: Suggest a new feature for the WinCC OA NPM
 title: "[Feature]: "
 labels: ["enhancement", "needs-triage"]
 projects: []
@@ -30,14 +30,12 @@ body:
     id: component
     attributes:
       label: Component
-      description: Which part of the extension does this feature relate to?
+      description: Which part of the package does this feature relate to?
       options:
         - Project Management (lifecycle, registration)
-        - Code Editor (syntax, completion)
         - Testing & Quality (test execution, analysis)
         - Documentation (generation, templates)
         - Integration (API, CI/CD)
-        - User Interface (tree view, dialogs)
         - Configuration (settings, preferences)
         - Other
     validations:
@@ -56,7 +54,7 @@ body:
     id: current-behavior
     attributes:
       label: Current Behavior
-      description: Describe how the extension currently works in this area
+      description: Describe how the package currently works in this area
       placeholder: Describe the current state or limitations
 
   - type: textarea

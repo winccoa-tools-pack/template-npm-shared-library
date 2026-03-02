@@ -1,103 +1,109 @@
-# NPM Shared Library Template
+# WinCC OA UI PNL/XML Converter
 
-Minimal starter template for creating shared npm libraries with Git Flow workflow.
+A lightweight developer tool for SIMATIC WinCC Open Architecture projects, providing reliable PNL ⇄ XML transformations for UI panels.
+This package is part of the modular winccoa-tools-pack ecosystem, which delivers modern development tooling,
+reusable libraries, and VS Code extensions for WinCC OA engineers.
+[github.com](https://github.com/winccoa-tools-pack)
 
-## 🚀 Quick Start
+## ✨ Features
 
-### Initial Setup
+- **PNL → XML conversion**  
+  Transform classic .pnl UI panel files into structured XML suitable for analysis, automation, and editor tooling.
 
-1. **Create repository from this template**
+- **XML → PNL conversion**  
+  Regenerate WinCC OA .pnl files from XML to enable round-trip workflows and external processing.
 
-   ```bash
-   # Via GitHub CLI
-   gh repo create winccoa-tools-pack/<your-library-name> \
-     --template winccoa-tools-pack/template-npm-shared-library \
-     --public
-   ```
+- **Tooling-friendly design**  
+  Built to integrate with next-generation WinCC OA development tools such as VS Code extensions,
+  reusable workflows, and advanced analysis pipelines,
+  consistent with the overall goals of the winccoa-tools-pack organization.
 
-2. **Clone and initialize Git Flow**
+- **Modern project template**  
+  Generated from the shared npm-winccoa-template to ensure consistent structure, CI/CD, TypeScript setup, linting, and maintainability across the ecosystem.
 
-   ```bash
-   git clone https://github.com/winccoa-tools-pack/<your-library-name>
-   cd <your-library-name>
+## 📦 Installation
 
-   # Initialize Git Flow locally (if you use the git-flow tool)
-   git flow init -d
-   git push -u origin develop
-   ```
-
-3. **Install dependencies and build**
-
-   ```bash
-   npm install
-   npm run build
-   npm test
-   ```
-
-## 🌳 Git Flow Workflow
-
-This template uses [Git Flow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) for branch management:
-
-### Branch Structure
-- **`main`** - Production-ready code (stable releases)
-- **`develop`** - Integration branch (pre-release features)
-- **`feature/*`** - New features
-- **`release/*`** - Release preparation
-- **`hotfix/*`** - Emergency fixes for production
-
-### Common Commands
-
-```bash
-# Start a new feature
-git flow feature start my-feature
-
-# Finish feature (merges to develop)
-git flow feature finish my-feature
-
-# Start a release
-git flow release start 1.0.0
-
-# Finish release (merges to main and develop, creates tag)
-git flow release finish 1.0.0
-
-# Hotfix for production
-git flow hotfix start 1.0.1
-git flow hotfix finish 1.0.1
+```shell
+npm install @winccoa-tools-pack/npm-winccoa-ui-pnl-xml
 ```
 
-### Branch Protection
+Or globally:
 
-The `setup-gitflow.ps1` script applies protection rules:
-- **main**: Requires PR reviews, status checks, no force pushes
-- **develop**: Requires PR reviews, status checks, allows force pushes (for rebasing)
+```shell
+npm install -g @winccoa-tools-pack/npm-winccoa-ui-pnl-xml
+```
 
-## 🔐 NPM Publishing Setup
+## 🖥 Usage (CLI)
 
-To enable automatic publishing to the NPM registry when creating releases, you need to configure an NPM access token:
+```shell
+# Convert .pnl → .xml (in-place)
+winccoa-pnl-xml convert pnl-to-xml about.pnl --version 3.20
 
-### Why NPM_TOKEN is Required
+# Convert .xml → .pnl (in-place)
+winccoa-pnl-xml convert xml-to-pnl about.xml --version 3.20
 
-The `release.yml` workflow automatically publishes your package to NPM when you merge a release PR to `main`. This requires authentication with the NPM registry.
+# Optional flags
+#   --config <path>   Use a specific project config file
+#   --overwrite       Overwrite existing output files
+#   --timeout <ms>    Increase process timeout
+```
 
-### How to Get an NPM Access Token
+## ⚠️ Important behavior
 
-1. **Log in to NPM**
-   - Go to [npmjs.com](https://www.npmjs.com/) and sign in (or create an account)
+- Conversion is performed by WinCC OA `WCCOAui` and is **in-place** (the input file is rewritten).
+- WinCC OA may create a `.bak` file next to the input.
+- The input passed to `-p` is typically resolved relative to the project’s `panels/` directory.
+  Use `--config` if you need to point the converter at a specific project context.
 
-2. **Generate Access Token**
-   - Navigate to **Access Tokens** in your account settings: https://www.npmjs.com/settings/~/tokens
-   - Click **"Generate New Token"** → Select **"Automation"** type
-   - Copy the generated token (you won't see it again!)
+## 🧩 Usage (API)
 
-3. **Add Token to Repository**
-   - Go to your GitHub repository settings
-   - Navigate to **Settings** → **Secrets and variables** → **Actions**
-   - Click **"New repository secret"**
-   - Name: `NPM_TOKEN`
-   - Value: Paste your NPM access token
-   - Click **"Add secret"**
+```typescript
+import { pnlToXml, xmlToPnl } from "@winccoa-tools-pack/npm-winccoa-ui-pnl-xml";
 
-### Token Permissions
+// Note: WinCC OA performs the conversion in-place and may create a .bak backup.
+// The input path is typically resolved relative to the project’s panels/ directory.
+
+const pnlToXmlResult = await pnlToXml({
+  version: "3.20",
+  inputPath: "about.pnl",
+  // configPath: "C:/path/to/project/config/config",
+  // overwrite: true,
+  // timeout: 120_000,
+});
+
+if (!pnlToXmlResult.success) {
+  throw new Error(`Conversion failed (exit ${pnlToXmlResult.exitCode}): ${pnlToXmlResult.stderr}`);
+}
+
+const xmlToPnlResult = await xmlToPnl({
+  version: "3.20",
+  inputPath: "about.xml",
+});
+
+console.log({ pnlToXmlResult, xmlToPnlResult });
+```
+
+More details: see [docs/USAGE.md](docs/USAGE.md).
+
+## 🩺 Troubleshooting
+
+- Non-zero exit code: inspect `stderr` and ensure `--version` matches your WinCC OA installation.
+- Timeouts on large panels: increase `--timeout` / `timeout`.
+- File not found: remember `inputPath` is usually relative to `panels/` in the active project context.
+
+## 📚 Ecosystem Integration
+
+This package is designed for seamless use with:
+
+- **VS Code extensions for WinCC OA development**  
+  Our open source community provides multiple VS Code tools that enhance the engineering workflow
+  for WinCC OA developers. This converter acts as a foundation for UI-related features such as the Panel Explorer.
+
+- **Node.js libraries**  
+  Works side-by-side with other libraries in the winccoa-tools-pack suite (project management, core utilities, testing, etc.).
+
+- **CI/CD automation**  
+  Ideal for pipelines needing validation or transformation of UI panel resources.
 
 - **Automation tokens** are recommended for CI/CD (they don't expire but can be revoked)
 - The token needs **publish** permission for your package scope
@@ -106,11 +112,13 @@ The `release.yml` workflow automatically publishes your package to NPM when you 
 ### Testing Without NPM_TOKEN
 
 If `NPM_TOKEN` is not configured, the workflow will:
+
 - ✅ Still run tests and build the package
 - ✅ Create GitHub releases with artifacts
 - ⚠️ Skip NPM publishing with a warning message
 
 You can always publish manually later:
+
 ```bash
 npm publish --access public
 ```
@@ -136,6 +144,7 @@ npm run lint
 Special thanks to all our [contributors](https://github.com/orgs/winccoa-tools-pack/people) who make this project possible!
 
 ### Key Contributors
+
 - **Martin Pokorny** ([@mPokornyETM](https://github.com/mPokornyETM)) - Creator & Lead Developer
 - And many more amazing contributors!
 
@@ -145,29 +154,28 @@ Special thanks to all our [contributors](https://github.com/orgs/winccoa-tools-p
 
 This project is basically licensed under the **MIT License** - see the [LICENSE](https://github.com/winccoa-tools-pack/.github/blob/main/LICENSE) file for details.
 
-It might happens, that the partial repositories contains third party SW which are using other license models.
+It might happen that partial repositories contain third party SW which uses other license models.
 
 ---
 
 ## ⚠️ Disclaimer
 
-**WinCC OA** and **Siemens** are trademarks of Siemens AG. This project is not affiliated with, endorsed by, or sponsored by Siemens AG. This is a community-driven open source project created to enhance the development experience for WinCC OA developers.
+**WinCC OA** and **Siemens** are trademarks of Siemens AG.
+This project is not affiliated with, endorsed by, or sponsored by Siemens AG.
+This is a community-driven open source project created to enhance the development experience for WinCC OA developers.
 
 ---
 
-## 🎉 Thank You!
+## 🎉 Thank You
 
 Thank you for using WinCC OA tools package! We're excited to be part of your development journey.
 
-**Happy Coding! 🚀**
+Happy Coding! 🚀
 
 ---
 
-<div align="center">
+## Quick Links
 
-**Quick Links**
+[📦 VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=mPokornyETM.wincc-oa-projects)
 
-• [📦 VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=mPokornyETM.wincc-oa-projects)
-
-*Made with ❤️ for and by the WinCC OA community*
-</div>
+Made with ❤️ for and by the WinCC OA community

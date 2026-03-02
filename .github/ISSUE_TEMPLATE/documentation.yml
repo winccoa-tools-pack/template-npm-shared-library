@@ -52,7 +52,7 @@ body:
     attributes:
       label: Documentation Location
       description: Where is this documentation located?
-      placeholder: "e.g., README.md, docs/api.md, line 42 of extension.ts"
+      placeholder: "e.g., README.md, docs/api.md, line 42 of OaComponent.ts"
 
   - type: textarea
     id: current-content
