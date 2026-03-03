@@ -1,6 +1,6 @@
 {
   "name": "@winccoa-tools-pack/npm-winccoa-ui-pnl-xml",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "PNL ⇄ XML converter for WinCC OA UI panels",
   "author": "winccoa-tools-pack",
   "license": "MIT",
