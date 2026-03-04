@@ -1,7 +1,7 @@
 {
-  "name": "@winccoa-tools-pack/npm-winccoa-ui-pnl-xml",
+  "name": "@winccoa-tools-pack/npm-winccoa-template",
   "version": "0.2.0",
-  "description": "PNL ⇄ XML converter for WinCC OA UI panels",
+  "description": "Template for WinCC OA npm packages",
   "author": "winccoa-tools-pack",
   "license": "MIT",
   "main": "dist/cjs/index.js",
