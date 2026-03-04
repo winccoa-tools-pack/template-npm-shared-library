@@ -1,6 +1,7 @@
 {
-  "name": "@winccoa-tools-pack/npm-winccoa-core",
-  "version": "0.1.0",
+  "name": "@winccoa-tools-pack/npm-winccoa-template",
+  "version": "0.2.0",
+  "description": "Template for WinCC OA npm packages",
   "author": "winccoa-tools-pack",
   "license": "MIT",
   "main": "dist/cjs/index.js",
@@ -23,13 +24,16 @@
       "types": "./dist/types/*.d.ts"
     }
   },
+  "bin": {
+    "winccoa-pnl-xml": "./dist/cjs/cli.js"
+  },
   "files": [
     "dist"
   ],
   "scripts": {
     "build:types": "tsc -p tsconfig.build.types.json",
     "build:cjs": "tsc -p tsconfig.build.cjs.json",
-    "build:esm": "tsc -p tsconfig.build.esm.json",
+    "build:esm": "tsc -p tsconfig.build.esm.json && node scripts/fix-esm-imports.mjs",
     "build": "npm run build:types && npm run build:cjs && npm run build:esm",
     "compile": "tsc --build",
     "prepublishOnly": "npm run build",
@@ -42,9 +46,12 @@
     "style-check": "npm run lint && npm run format:check && npm run lint:md",
     "style-fix": "npm run lint:fix && npm run format && npm run lint:md:fix",
     "test": "npm run style-check && npm run build && npm run test:unit",
-    "test:unit": "node --import tsx --test --test-force-exit test/unit/*.test.ts test/unit/types/**/*.test.ts test/unit/utils/*.test.ts",
-    "test:integration": "node --import tsx --test --test-force-exit test/integration/*.test.ts",
+    "test:unit": "node --import tsx scripts/run-node-tests.ts test/unit",
+    "test:integration": "node --import tsx scripts/run-node-tests.ts test/integration",
     "ci:integration": "npm ci && npm run build && npm run test:integration"
+  },
+  "dependencies": {
+    "@winccoa-tools-pack/npm-winccoa-core": "^0.2.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
@@ -61,8 +68,8 @@
     "typescript": "^5.2.0",
     "typescript-eslint": "^8.51.0"
   },
-  "overrides": {
-    "glob": "^9.0.0"
+  "config": {
+    "winccoaImage": "mpokornyetm/winccoa-tools-pack-npm-winccoa-core:npm-winccoa-core"
   },
   "engines": {
     "node": ">=20"

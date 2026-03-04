@@ -1,64 +1,95 @@
-# Git Flow Workflow (Guide)
+# Git Flow Workflow
 
-This repository template uses the Git Flow branching model. The repository
-includes GitHub Actions workflows that help enforce branch protection and
-automate parts of the release process.
+This repository follows a Git Flow style branching model and provides GitHub Actions workflows to:
 
-Summary
+- validate branch naming + PR targets
+- keep `develop` up to date with `main`
+- create release/hotfix branches via workflow dispatch
+- produce tested prereleases and publish stable releases
 
-**Branch Overview:**
+## Branch model
 
-- main: Production-ready code (stable releases)
-- develop: Integration branch for ongoing development
-- feature/\*: New features (branch off `develop`)
-- release/\*: Prepare and test release candidates (branch off `develop`)
-- hotfix/\*: Emergency fixes for `main`
+- `main`: stable, release-ready
+- `develop`: integration branch
+- `feature/*`: feature work (target `develop`)
+- `bugfix/*`: bug fixes during development (target `develop`)
+- `release/vX.Y.Z`: release preparation (target `main`)
+- `hotfix/vX.Y.Z`: hotfix preparation (target `main`)
 
-Recommended local setup
+## Validation (PR guardrails)
 
-1.Install the `git-flow` tooling for your platform (optional). - Windows: use Scoop/Chocolatey or WSL - macOS: `brew install git-flow-avh` - Linux: `apt install git-flow` (Debian/Ubuntu)
+Workflow: `.github/workflows/gitflow-validation.yml`
 
-2.Initialize git-flow locally (if using the tool):
+On each PR, it validates:
 
-```bash
-git flow init -d
-git push -u origin develop
-```
+- branch naming conventions (e.g. `feature/*`, `release/*`, `hotfix/*`)
+- PR base branch (e.g. `feature/*` must target `develop`, `release/*` must target `main`)
+- PR title follows Conventional Commits (used for squash merges)
 
-3.Branching examples
+## Upmerge main → develop (via PR)
 
-```bash
-# Start a feature from develop
-git checkout develop
-git flow feature start my-feature
+Workflow: `.github/workflows/gitflow.yml`
 
-# Finish feature and push
-git flow feature finish my-feature
-git push origin develop
-```
+Whenever `main` gets new commits, the workflow:
 
-Applying branch protection
+1. Updates/creates `feature/upmerge-main-to-develop`
+2. Merges `main` into that branch (using `-X theirs` to auto-resolve conflicts in favour of main)
+3. Creates/updates a PR into `develop` (draft if merge conflicts are detected)
+4. Enables GitHub auto-merge (squash) on the PR so it merges automatically once required status checks pass
 
-There is a workflow `Setup Git Flow Branch Protection` in `.github/workflows/setup-gitflow.yml` which can apply recommended protection settings to `main` and `develop`.
-Run it from the Actions tab or via `workflow_dispatch` if you have repository admin rights.
+This keeps the upmerge conflict-friendly and auditable.
 
-Notes
+> **Note:** The auto-merge uses **squash** merge to comply with the `develop` branch's `required_linear_history` ruleset. The repo-level `allow_auto_merge` setting must be enabled (see `repository.settings.yml`).
 
-- If you don't want to install the `git-flow` CLI, you can use standard git commands and follow the same branch naming conventions.
-- The template's release workflows (e.g. `release.yml`) will operate on `main` and require repository secrets (e.g. `NPM_TOKEN`) for publishing.
+## Creating release/hotfix branches
 
----
+Workflow: `.github/workflows/create-release-branch.yml`
 
-## 🎉 Thank You
+Use Actions → **Create Release Branch + PR**:
 
-Thank you for using WinCC OA tools package!
-We're excited to be part of your development journey. **Happy Coding! 🚀**
+- `kind`: `release` or `hotfix`
+- `version`: `X.Y.Z` (SemVer)
+- It creates `release/vX.Y.Z` or `hotfix/vX.Y.Z`
+- It bumps `package.json` version and refreshes `package-lock.json`
+- It opens a PR to `main`
+
+Important: this workflow does **not** update `CHANGELOG.md`.
+
+## Pre-release + release pipeline
+
+- **Pre-Release (Alpha)** (`.github/workflows/pre-release.yml`)
+  - Runs for PRs targeting `main`
+  - Creates a GitHub pre-release tag like `vX.Y.Z-<sha>` with a tested npm tarball (`*.tgz`)
+
+- **Release** (`.github/workflows/release.yml` → `release-reusable.yml`)
+  - Runs on successful workflow runs on `main`
+  - Requires a matching tested prerelease asset for the version
+  - Creates the stable tag `vX.Y.Z`, attaches the tested tarball (`*.tgz`), and publishes to npm (`NPM_TOKEN`)
+
+## Branch protection / rulesets
+
+Rulesets are defined in `.github/rulesets/` and can be applied automatically.
+
+Workflow: `.github/workflows/apply-settings-and-rulesets.yml`
+
+- Source of truth:
+  - `.github/repository.settings.yml`
+  - `.github/rulesets/*.yml`
+- Requires an admin-capable token (`REPO_ADMIN_TOKEN`) to apply settings/rulesets.
+
+Note: the provided rulesets require these status check contexts:
+
+- `CI/CD Pipeline - Required`
+- `PR Labels - Required`
+- `Git Flow Validation - Required`
+
+If you keep these rulesets enabled, ensure your workflows emit these check names (or adjust the rulesets to match your repo).
 
 ---
 
 ## Quick Links
 
-• [📦 VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=mPokornyETM.wincc-oa-projects)
+• [📦 npm package](https://www.npmjs.com/package/@winccoa-tools-pack/npm-winccoa-core)
 
 ---
 

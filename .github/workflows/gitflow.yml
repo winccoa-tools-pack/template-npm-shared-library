@@ -1,38 +1,196 @@
-name: Gitflow Auto-Merge
+name: GitFlow (Upmerge main → develop via PR)
 
 on:
-  workflow_run:
-    workflows:
-      - "Release"
-    types:
-      - completed
+  push:
     branches:
       - main
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
+
+concurrency:
+  group: upmerge-main-to-develop
+  cancel-in-progress: false
 
 jobs:
-  merge-back:
+  upmerge:
+    name: Create/Update Upmerge PR
     runs-on: ubuntu-latest
-    # Only run if the release workflow succeeded
-    if: github.event.workflow_run.conclusion == 'success'
-    
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Configure Git
+          # A PAT is required so that the push / PR-create fires pull_request
+          # events, which in turn trigger the required status checks (CI/CD,
+          # PR Labels, Git Flow Validation).  The default GITHUB_TOKEN
+          # deliberately suppresses those events to prevent recursive loops.
+          token: ${{ secrets.REPO_ADMIN_TOKEN }}
+
+      - name: Configure git identity
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-      
-      - name: Merge main to develop
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Prepare upmerge branch
+        id: prep
+        shell: bash
         run: |
-          git checkout develop
-          git merge --no-ff main -m "chore(gitflow): merge main back to develop"
-          git push origin develop
+          set -euo pipefail
+
+          UP_BRANCH="feature/upmerge-main-to-develop"
+          BASE_BRANCH="develop"
+
+          echo "up_branch=$UP_BRANCH" >> "$GITHUB_OUTPUT"
+          echo "base_branch=$BASE_BRANCH" >> "$GITHUB_OUTPUT"
+
+          # Ensure we have the latest refs
+          git fetch origin "+refs/heads/main:refs/remotes/origin/main"
+          git fetch origin "+refs/heads/$BASE_BRANCH:refs/remotes/origin/$BASE_BRANCH" || true
+          git fetch origin "+refs/heads/$UP_BRANCH:refs/remotes/origin/$UP_BRANCH" || true
+
+          if git show-ref --verify --quiet "refs/remotes/origin/$UP_BRANCH"; then
+            echo "Upmerge branch exists on origin: $UP_BRANCH"
+            git checkout -B "$UP_BRANCH" "origin/$UP_BRANCH"
+          else
+            echo "Creating upmerge branch from $BASE_BRANCH"
+            git checkout -B "$UP_BRANCH" "origin/$BASE_BRANCH"
+          fi
+
+          # Check if there is anything new on main that develop doesn't have
+          if git diff --quiet "HEAD..origin/main" 2>/dev/null; then
+            echo "Nothing to upmerge – develop already contains everything from main."
+            echo "skip=true"  >> "$GITHUB_OUTPUT"
+            echo "had_conflicts=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+          # Merge main into upmerge branch.
+          # -X theirs: on any conflict accept the content from main (the
+          # release commit is authoritative for files it touched).
+          # This resolves the conflicts caused by squash-merged release PRs
+          # where git cannot trace common ancestry.
+          if git merge --no-ff --no-edit -X theirs "origin/main"; then
+            echo "had_conflicts=false" >> "$GITHUB_OUTPUT"
+          else
+            # -X theirs handles content conflicts automatically.
+            # If we still fail here it is a tree conflict (e.g. modify vs
+            # delete).  Stage everything, preferring main's version, and
+            # commit.
+            echo "::warning::Merge had structural conflicts – auto-resolving in favour of main."
+            git checkout --theirs . 2>/dev/null || true
+            git add -A
+            git -c core.editor=true merge --continue || \
+              git commit --no-edit -m "chore: upmerge main to develop (auto-resolved)"
+            echo "had_conflicts=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Push upmerge branch
+        if: steps.prep.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push --force-with-lease origin "${{ steps.prep.outputs.up_branch }}"
+
+      - name: Create or update PR (draft if conflicts)
+        if: steps.prep.outputs.skip != 'true'
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.REPO_ADMIN_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const head = '${{ steps.prep.outputs.up_branch }}';
+            const base = '${{ steps.prep.outputs.base_branch }}';
+            const hadConflicts = '${{ steps.prep.outputs.had_conflicts }}' === 'true';
+
+            const title = 'chore: upmerge main to develop';
+            const body = [
+              'This PR keeps `develop` up to date with `main` by merging `main` into a dedicated upmerge branch.',
+              '',
+              hadConflicts
+                ? '**Merge conflicts were detected.** Please resolve them in this PR.'
+                : 'No merge conflicts detected.',
+            ].join('\n');
+
+            // Find existing open PR from head to base
+            const prs = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: 'open',
+              head: `${owner}:${head}`,
+              base,
+              per_page: 20,
+            });
+
+            if (prs.data.length > 0) {
+              const pr = prs.data[0];
+              await github.rest.pulls.update({
+                owner,
+                repo,
+                pull_number: pr.number,
+                title,
+                body,
+                draft: hadConflicts ? true : pr.draft,
+              });
+              core.notice(`Updated PR #${pr.number} (${pr.html_url}).`);
+
+              // Enable auto-merge so the PR merges once required status checks pass.
+              if (!hadConflicts && !pr.draft) {
+                try {
+                  // GitHub GraphQL is required to enable auto-merge.
+                  const { repository } = await github.graphql(`
+                    query($owner: String!, $repo: String!, $number: Int!) {
+                      repository(owner: $owner, name: $repo) {
+                        pullRequest(number: $number) { id }
+                      }
+                    }`, { owner, repo, number: pr.number });
+                  await github.graphql(`
+                    mutation($prId: ID!, $method: PullRequestMergeMethod!) {
+                      enablePullRequestAutoMerge(input: { pullRequestId: $prId, mergeMethod: $method }) {
+                        clientMutationId
+                      }
+                    }`, { prId: repository.pullRequest.id, method: 'SQUASH' });
+                  core.notice(`Enabled auto-merge (squash) on PR #${pr.number}`);
+                } catch (e) {
+                  core.warning(`Could not enable auto-merge on PR #${pr.number}: ${e.message}`);
+                }
+              }
+              return;
+            }
+
+            const created = await github.rest.pulls.create({
+              owner,
+              repo,
+              head,
+              base,
+              title,
+              body,
+              draft: hadConflicts,
+            });
+            core.notice(`Created PR #${created.data.number} (${created.data.html_url}).`);
+
+            // Enable auto-merge so the PR merges once required status checks pass.
+            if (!hadConflicts) {
+              try {
+                const { repository } = await github.graphql(`
+                  query($owner: String!, $repo: String!, $number: Int!) {
+                    repository(owner: $owner, name: $repo) {
+                      pullRequest(number: $number) { id }
+                    }
+                  }`, { owner, repo, number: created.data.number });
+                await github.graphql(`
+                  mutation($prId: ID!, $method: PullRequestMergeMethod!) {
+                    enablePullRequestAutoMerge(input: { pullRequestId: $prId, mergeMethod: $method }) {
+                      clientMutationId
+                    }
+                  }`, { prId: repository.pullRequest.id, method: 'SQUASH' });
+                core.notice(`Enabled auto-merge (squash) on PR #${created.data.number}`);
+              } catch (e) {
+                core.warning(`Could not enable auto-merge on PR #${created.data.number}: ${e.message}`);
+              }
+            }

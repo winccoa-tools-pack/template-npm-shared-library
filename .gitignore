@@ -31,3 +31,7 @@ coverage/
 .cache/
 tsconfig.tsbuildinfo
 build/test/
+
+# Python
+__pycache__/
+*.pyc

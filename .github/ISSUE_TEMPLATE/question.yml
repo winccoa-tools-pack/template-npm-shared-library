@@ -1,5 +1,5 @@
 name: ❓ Question / Support
-description: Ask a question or get support for using the extension
+description: Ask a question or get support for using the package
 title: "[Question]: "
 labels: ["question", "needs-triage"]
 projects: []
@@ -9,7 +9,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Have a question about using the WinCC OA VS Code Extension? 🤔
+        Have a question about using the WinCC OA NPM package? 🤔
         
         Please check our [documentation](../README.md) first, then ask your question below.
 

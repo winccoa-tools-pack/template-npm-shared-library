@@ -1,8 +1,15 @@
 /**
- * WinCC OA Core Utilities
- * Platform-agnostic utilities for WinCC OA automation
+ * WinCC OA UI PNL/XML Converter
+ *
+ * Provides reliable PNL ⇄ XML transformations for WinCC OA UI panels
+ * using the WCCOAui manager under the hood.
  */
 
-// Export all utilities
-export * from './utils/index.js';
-export * from './types/index.js';
+// Types
+export { ConversionDirection, ConversionOptions, ConversionResult } from './types';
+
+// Core converter
+export { PnlXmlConverter } from './converter';
+
+// Convenience API
+export { pnlToXml, xmlToPnl } from './api';
