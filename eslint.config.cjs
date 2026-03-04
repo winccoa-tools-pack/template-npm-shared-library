@@ -2,6 +2,7 @@
 // eslint.config.cjs — ESLint 9 (flat config)
 const js = require('@eslint/js');                         // core ESLint rules
 const tseslint = require('typescript-eslint');            // TS parser + plugin + shareable configs
+const importPlugin = require('eslint-plugin-import');     // import rules
 const globals = require('globals');                       // environment globals (node, ES2021)
 
 module.exports = tseslint.config(
@@ -20,10 +21,14 @@ module.exports = tseslint.config(
         ...globals.es2021,
       },
     },
+    plugins: {
+      import: importPlugin,
+    },
     rules: {
       // Your original rules (applied to all files unless overridden later)
       // Turn off core rule; use TS-specific variant in TS section
       'no-unused-vars': 'off',
+      'import/no-unresolved': 'off',
     },
   },
 
@@ -39,6 +44,7 @@ module.exports = tseslint.config(
     },
     plugins: {
       '@typescript-eslint': tseslint.plugin,
+      import: importPlugin,
     },
     // Use shareable configs from typescript-eslint (recommended)
     extends: [
