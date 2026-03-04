@@ -1,5 +1,5 @@
 name: 🐛 Bug Report
-description: Report a problem with the WinCC OA NPM package
+description: Report a problem with the WinCC OA VS Code Extension
 title: "[Bug]: "
 labels: ["bug", "needs-triage"]
 projects: []
@@ -19,7 +19,7 @@ body:
       label: Severity
       description: How severe is this bug?
       options:
-        - Critical (Package completely unusable)
+        - Critical (Extension completely unusable)
         - High (Major functionality broken)
         - Medium (Feature partially broken)
         - Low (Minor issue or cosmetic)
@@ -41,7 +41,7 @@ body:
       label: Steps to Reproduce
       description: Steps to reproduce the behavior
       placeholder: |
-        In best case a small script to reproduce the behavior
+        In best case a small script to reproduce the behavior.
     validations:
       required: true
 

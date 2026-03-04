@@ -1,3 +1,9 @@
+---
+Minimal starter template for creating shared WinCC OA NPM libraries
+THIS IS AN EXAMPLE README
+---
+
+
 # WinCC OA UI PNL/XML Converter
 
 A lightweight developer tool for SIMATIC WinCC Open Architecture projects, providing reliable PNL ⇄ XML transformations for UI panels.
