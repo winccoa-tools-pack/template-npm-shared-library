@@ -1,0 +1,20 @@
+# apm.yml — npm Shared Library Template
+# AI agent configuration for this repository
+#
+# Setup (once per machine):
+#   Windows: irm https://aka.ms/apm-windows | iex
+#   macOS/Linux: curl -sSL https://aka.ms/apm-unix | sh
+#   Docs: https://microsoft.github.io/apm/getting-started/quick-start/
+#
+# After cloning:
+#   apm install
+
+name: template-npm-shared-library
+version: 0.1.0
+description: |
+  AI agent configuration for WinCC OA npm shared library development.
+
+dependencies:
+  apm:
+    - winccoa-tools-pack/apm-org
+    - winccoa-tools-pack/apm-npm-package
