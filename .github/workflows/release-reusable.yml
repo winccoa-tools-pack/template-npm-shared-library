@@ -168,7 +168,7 @@ jobs:
           npm publish "./$TARBALL_PATH" --access public --ignore-scripts
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.tag.outputs.tag }}
           name: ${{ format('Release {0}', needs.tag.outputs.tag) }}
