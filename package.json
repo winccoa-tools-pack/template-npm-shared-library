@@ -51,7 +51,7 @@
     "ci:integration": "npm ci && npm run build && npm run test:integration"
   },
   "dependencies": {
-    "@winccoa-tools-pack/npm-winccoa-core": "^0.2.6"
+    "@winccoa-tools-pack/npm-winccoa-core": "^2.0.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
