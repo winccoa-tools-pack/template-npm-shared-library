@@ -175,7 +175,7 @@ jobs:
           echo "Checked ${RUNS_COUNT} recent workflow run(s)"
 
           # Debug waiting runs (first 50)
-          jq -r '.workflow_runs[] | select(.status=="waiting" or .status=="requested") | "RUN id="+.id|tostring+" name=\""+.name+"\" status="+.status+" actor="+((.actor.login) // "")+" prs="+([(.pull_requests[].number // empty)]|@csv)' /tmp/runs.json | sed 's/\[\]\|null//g' | head -n 50 || true
+          jq -c '.workflow_runs[] | select(.status=="waiting" or .status=="requested") | {id: .id, name: .name, status: .status, actor: (.actor.login // ""), prs: ([.pull_requests[].number] // [])}' /tmp/runs.json | head -n 50 || true
 
           APPROVED=0
 
