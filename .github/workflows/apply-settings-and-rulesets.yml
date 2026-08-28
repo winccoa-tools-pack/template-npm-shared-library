@@ -173,6 +173,13 @@ jobs:
 
           RUNS_COUNT=$(jq '.workflow_runs | length' /tmp/runs.json)
           echo "Checked ${RUNS_COUNT} recent workflow run(s)"
+          # Validate runs JSON before processing to avoid "Unfinished string" errors
+          if ! jq -e . /tmp/runs.json >/dev/null 2>&1; then
+            echo "WARNING: /tmp/runs.json is not valid JSON. Showing raw content for debugging:";
+            sed -n '1,200p' /tmp/runs.json || true
+            echo "Skipping approval step due to invalid workflow run JSON.";
+            exit 0
+          fi
 
           # Debug waiting runs (first 50)
           jq -c '.workflow_runs[] | select(.status=="waiting" or .status=="requested") | {id: .id, name: .name, status: .status, actor: (.actor.login // ""), prs: ([.pull_requests[].number] // [])}' /tmp/runs.json | head -n 50 || true
