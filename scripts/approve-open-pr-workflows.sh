@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
-# Approve waiting workflow runs for open PRs using `gh` and `jq`.
+# Approve waiting workflow runs for open PRs using only the `gh` CLI.
 # Usage: ./scripts/approve-open-pr-workflows.sh [owner/repo]
-# Requires: gh CLI authenticated (or set GH_TOKEN), jq installed.
-# Approve waiting workflow runs for open PRs using `gh` and `jq`.
-# Usage: ./scripts/approve-open-pr-workflows.sh [owner/repo]
-# Requires: gh CLI authenticated (or set GH_TOKEN), jq installed.
+# Requires: gh CLI authenticated (or set GH_TOKEN). Does NOT require `jq`.
 
 set -euo pipefail
 REPO=${1:-}
@@ -26,59 +23,42 @@ WORKFLOWS=${WORKFLOWS:-}
 TMPDIR=$(mktemp -d)
 trap 'rm -rf "$TMPDIR"' EXIT
 
-echo "Fetching open PRs..."
-gh api repos/$REPO/pulls --jq '.' > "$TMPDIR/prs.json" 2>"$TMPDIR/prs.err" || true
-
-echo "Fetching recent workflow runs..."
-gh api "repos/$REPO/actions/runs?event=pull_request&per_page=100" --jq '.' > "$TMPDIR/runs.json" 2>"$TMPDIR/runs.err" || true
-
-if ! jq -e . "$TMPDIR/prs.json" >/dev/null 2>&1; then
-  echo "prs.json is not valid JSON" >&2
-  sed -n '1,200p' "$TMPDIR/prs.err" >&2 || true
-  exit 3
+echo "Fetching open PR numbers..."
+PR_NUMBERS=$(gh api repos/$REPO/pulls --jq '.[].number' 2>/dev/null || true)
+if [ -z "$PR_NUMBERS" ]; then
+  echo "No open PRs found or 'gh' failed to list PRs." >&2
+  exit 0
 fi
-if ! jq -e . "$TMPDIR/runs.json" >/dev/null 2>&1; then
-  echo "runs.json is not valid JSON" >&2
-  sed -n '1,200p' "$TMPDIR/runs.err" >&2 || true
-  exit 3
-fi
-
-PR_COUNT=$(jq 'length' "$TMPDIR/prs.json")
-echo "Found $PR_COUNT open PR(s)"
-
-RUNS_COUNT=$(jq '.workflow_runs | length' "$TMPDIR/runs.json")
-echo "Checked $RUNS_COUNT recent workflow run(s)"
 
 APPROVED=0
 
-# Iterate PRs
-jq -c '.[]' "$TMPDIR/prs.json" | while read -r row; do
-  PR_NUMBER=$(echo "$row" | jq -r '.number')
-  PR_HEAD_SHA=$(echo "$row" | jq -r '.head.sha')
-
-  # Build jq filter for matching runs
-  if [ -n "$PR_NUMBER" ]; then
-    MATCH_FILTER="(.pull_requests | any(.number == ($PR_NUMBER|tonumber))) or (.head_sha == \"$PR_HEAD_SHA\")"
-  else
-    MATCH_FILTER="(.head_sha == \"$PR_HEAD_SHA\")"
-  fi
-
-  # Find runs for this PR that are waiting/requested
-  matches=$(jq -c --arg prnum "$PR_NUMBER" --arg headsha "$PR_HEAD_SHA" '.workflow_runs[] | select((.pull_requests | any(.number == ($prnum|tonumber))) or (.head_sha == $headsha)) | select(.status=="waiting" or .status=="requested")' "$TMPDIR/runs.json" 2>/dev/null || true)
-  if [ -z "$matches" ]; then
+# Iterate PR numbers and fetch head shas per-PR using gh --jq (no external jq required)
+while read -r PR_NUMBER; do
+  [ -z "$PR_NUMBER" ] && continue
+  PR_HEAD_SHA=$(gh api repos/$REPO/pulls/$PR_NUMBER --jq '.head.sha' 2>/dev/null || true)
+  if [ -z "$PR_HEAD_SHA" ]; then
+    echo "Could not get head SHA for PR #$PR_NUMBER, skipping." >&2
     continue
   fi
 
-  echo "$matches" | while read -r run; do
-    RUN_ID=$(echo "$run" | jq -r '.id')
-    RUN_NAME=$(echo "$run" | jq -r '.name')
-    ACTOR=$(echo "$run" | jq -r '.actor.login // ""')
+  # Query workflow runs for this head_sha and only output matching runs as tab-separated lines: id\tname\tactor
+  runs_output=$(gh api "repos/$REPO/actions/runs?event=pull_request&per_page=100&head_sha=$PR_HEAD_SHA" --jq '.workflow_runs[] | select(.status=="waiting" or .status=="requested") | "\(.id)\t\(.name)\t\(.actor.login // "")"' 2>/dev/null || true)
+  if [ -z "$runs_output" ]; then
+    continue
+  fi
+
+  # Process each matching run line
+  echo "$runs_output" | while IFS=$'\t' read -r RUN_ID RUN_NAME ACTOR; do
+    if [ -z "$RUN_ID" ]; then
+      continue
+    fi
 
     if [ "${DEPENDABOT_ONLY}" = "true" ]; then
-      if [[ "${ACTOR,,}" != dependabot* ]]; then
-        echo "SKIP run $RUN_ID for PR #$PR_NUMBER (actor $ACTOR)"
-        continue
-      fi
+      ACTOR_LOWER=$(echo "$ACTOR" | tr '[:upper:]' '[:lower:]')
+      case "$ACTOR_LOWER" in
+        dependabot* ) ;;
+        * ) echo "SKIP run $RUN_ID for PR #$PR_NUMBER (actor $ACTOR)"; continue ;;
+      esac
     fi
 
     if [ -n "$WORKFLOWS" ]; then
@@ -98,7 +78,7 @@ jq -c '.[]' "$TMPDIR/prs.json" | while read -r row; do
     APPROVED=$((APPROVED+1))
   done
 
-done
+done <<< "$PR_NUMBERS"
 
 echo "Total approved runs: $APPROVED"
 
