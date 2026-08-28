@@ -164,9 +164,10 @@ jobs:
           REPO="${GITHUB_REPOSITORY}"
           IFS='/' read -r OWNER NAME <<< "$REPO"
 
-          # Fetch open PRs and recent workflow runs
-          gh api repos/$OWNER/$NAME/pulls --jq '.' > /tmp/prs.json 2>/tmp/prs.err || true
-          gh api repos/$OWNER/$NAME/actions/runs?event=pull_request --jq '.' > /tmp/runs.json 2>/tmp/runs.err || true
+          # Fetch open PRs and recent workflow runs using curl to avoid gh CLI log linkification
+          # Use GH_TOKEN for auth (set in env above)
+          curl -sS -H "Authorization: token ${GH_TOKEN:-}" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$OWNER/$NAME/pulls?per_page=100" > /tmp/prs.json 2>/tmp/prs.err || true
+          curl -sS -H "Authorization: token ${GH_TOKEN:-}" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$OWNER/$NAME/actions/runs?event=pull_request&per_page=100" > /tmp/runs.json 2>/tmp/runs.err || true
 
           # Dump raw JSON for debugging (first 200 lines)
           echo "--- RAW /tmp/prs.json (first 200 lines) ---"
