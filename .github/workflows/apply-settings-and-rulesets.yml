@@ -168,6 +168,8 @@ jobs:
           set -euo pipefail
           npm init -y >/dev/null
           npm install @octokit/rest@^19 >/dev/null
+          # Allow packages with install scripts (esbuild etc.) when npm prompts
+          npm approve-scripts --allow-scripts-pending || true
 
           cat > .github/approve-open-pr-workflows.js <<'JS'
           const { Octokit } = require('@octokit/rest');
@@ -188,15 +190,29 @@ jobs:
             const runs = runsResp.data.workflow_runs || [];
             console.log(`Checked ${runs.length} recent workflow run(s)`);
 
+            // debug: print waiting runs summary
+            const waitingRuns = runs.filter(r => r.status === 'waiting' || r.status === 'requested');
+            console.log(`Waiting runs count: ${waitingRuns.length}`);
+            for (const r of waitingRuns.slice(0,50)) {
+              console.log(`RUN id=${r.id} name='${r.name}' status=${r.status} actor=${(r.actor&&r.actor.login)||''} prs=${JSON.stringify((r.pull_requests||[]).map(p=>p.number))}`);
+            }
+
             let approved = 0;
 
             for (const pr of prs) {
               const prNumber = pr.number;
-              const matchingRuns = runs.filter(r => {
+            const matchingRuns = runs.filter(r => {
                 if (!r.pull_requests || r.pull_requests.length === 0) return false;
                 const touchesPr = r.pull_requests.some(x => x.number === prNumber);
                 const isWaiting = (r.status === 'waiting' || r.status === 'requested');
-                if (!touchesPr || !isWaiting) return false;
+              if (!touchesPr || !isWaiting) {
+                // debug: log why this run was skipped for this PR
+                if (r.pull_requests && r.pull_requests.length>0) {
+                  const prNums = (r.pull_requests||[]).map(p=>p.number).join(',');
+                  console.log(`SKIP run ${r.id} for PR #${prNumber} (touches: ${prNums}, status: ${r.status}, actor: ${(r.actor&&r.actor.login)||''}, name: ${r.name})`);
+                }
+                return false;
+              }
                 if (dependabotOnly) {
                   const actor = (r.actor && r.actor.login) || '';
                   if (!actor.toLowerCase().startsWith('dependabot')) return false;
