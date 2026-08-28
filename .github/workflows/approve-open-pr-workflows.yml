@@ -1,0 +1,103 @@
+name: Approve Open PR Workflows
+
+on:
+  workflow_dispatch:
+    inputs:
+      dependabot_only:
+        description: 'Approve workflows only when the actor is dependabot[bot]'
+        required: false
+        default: 'true'
+
+jobs:
+        - name: Read auto-approve config
+          shell: bash
+          run: |
+            python3 - <<'PY'
+  import yaml, os
+  try:
+      with open('.github/repository.settings.yml', 'r', encoding='utf-8') as f:
+          y = yaml.safe_load(f) or {}
+          aa = y.get('auto_approve', {})
+          dependabot = aa.get('dependabot_only', True)
+          workflows = aa.get('workflows', []) or []
+  except Exception:
+      dependabot = True
+      workflows = []
+  gh_env = os.environ.get('GITHUB_ENV')
+  with open(gh_env, 'a', encoding='utf-8') as gh:
+      gh.write(f"AUTO_APPROVE_DEPENDABOT={str(dependabot).lower()}\n")
+      gh.write('AUTO_APPROVE_WORKFLOWS=' + '||'.join(workflows) + '\n')
+  PY
+  approve:
+    runs-on: ubuntu-latest
+    env:
+      AUTO_APPROVE_TOKEN: ${{ secrets.AUTO_APPROVE_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+              const dependabotOnly = (process.env.INPUT_DEPENDABOT_ONLY || process.env.AUTO_APPROVE_DEPENDABOT || 'true').toLowerCase() === 'true';
+              const wfFilterRaw = process.env.AUTO_APPROVE_WORKFLOWS || '';
+              const wfFilters = wfFilterRaw ? wfFilterRaw.split('||').map(s=>s.trim()).filter(Boolean) : [];
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const token = process.env.AUTO_APPROVE_TOKEN;
+            if (!token) throw new Error('Secret AUTO_APPROVE_TOKEN is required');
+            const octokit = github.getOctokit(token);
+            const dependabotOnly = (process.env.INPUT_DEPENDABOT_ONLY || 'true').toLowerCase() === 'true';
+
+            // Get open PRs
+            const { data: prs } = await octokit.rest.pulls.list({ owner, repo, state: 'open', per_page: 100 });
+            core.info(`Found ${prs.length} open PR(s)`);
+
+            // List recent workflow runs triggered by pull_request event
+            const runsResp = await octokit.rest.actions.listWorkflowRunsForRepo({ owner, repo, event: 'pull_request', per_page: 100 });
+            const runs = runsResp.data.workflow_runs || [];
+            core.info(`Checked ${runs.length} recent workflow run(s)`);
+
+            let approved = 0;
+
+            for (const pr of prs) {
+              const prNumber = pr.number;
+
+                  // If workflow name filters provided, ensure run workflow matches
+                  if (wfFilters.length > 0) {
+                    const wfName = (r.name || '').toString();
+                    return wfFilters.includes(wfName);
+                  }
+
+                  return true;
+              const matchingRuns = runs.filter(r => {
+                if (!r.pull_requests || r.pull_requests.length === 0) return false;
+                const touchesPr = r.pull_requests.some(x => x.number === prNumber);
+                const isWaiting = (r.status === 'waiting' || r.status === 'requested');
+                if (!touchesPr || !isWaiting) return false;
+                if (dependabotOnly) {
+                  const actor = (r.actor && r.actor.login) || '';
+                  return actor.toLowerCase().startsWith('dependabot');
+                }
+                return true;
+              });
+
+              for (const run of matchingRuns) {
+                try {
+                  await octokit.request('POST /repos/{owner}/{repo}/actions/runs/{run_id}/approve', {
+                    owner,
+                    repo,
+                    run_id: run.id,
+                  });
+                  core.info(`Approved run ${run.id} for PR #${prNumber}`);
+                  approved++;
+                } catch (err) {
+                  core.warning(`Failed to approve run ${run.id} for PR #${prNumber}: ${err.message}`);
+                }
+              }
+            }
+
+            core.info(`Total approved runs: ${approved}`);
+
+      - name: Done
+        run: echo "Approval step finished"
