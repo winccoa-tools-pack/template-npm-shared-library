@@ -155,69 +155,79 @@ jobs:
             gh.write('AUTO_APPROVE_WORKFLOWS=' + '||'.join(workflows) + '\n')
           PY
 
-      - name: Approve waiting workflow runs for open PRs
-        uses: actions/github-script@v6
+      - name: Setup Node 24 and approve waiting workflow runs for open PRs
+        uses: actions/setup-node@v4
         with:
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const token = process.env.AUTO_APPROVE_TOKEN;
-            if (!token) throw new Error('Secret AUTO_APPROVE_TOKEN or REPO_ADMIN_TOKEN is required');
-            const { Octokit } = require('@octokit/rest');
-            const octokit = new Octokit({ auth: token });
-            const dependabotOnly = (process.env.AUTO_APPROVE_DEPENDABOT || 'true').toLowerCase() === 'true';
-            const wfFilterRaw = process.env.AUTO_APPROVE_WORKFLOWS || '';
-            const wfFilters = wfFilterRaw ? wfFilterRaw.split('||').map(s=>s.trim()).filter(Boolean) : [];
+          node-version: '24'
 
-            // Get open PRs
-            const { data: prs } = await octokit.rest.pulls.list({ owner, repo, state: 'open', per_page: 100 });
-            core.info(`Found ${prs.length} open PR(s)`);
+      - name: Install runtime dependencies and run approver
+        shell: bash
+        env:
+          AUTO_APPROVE_TOKEN: ${{ env.AUTO_APPROVE_TOKEN }}
+        run: |
+          set -euo pipefail
+          npm init -y >/dev/null
+          npm install @octokit/rest@^19 >/dev/null
 
-            // List recent workflow runs triggered by pull_request event
-            const runsResp = await octokit.rest.actions.listWorkflowRunsForRepo({ owner, repo, event: 'pull_request', per_page: 100 });
-            const runs = runsResp.data.workflow_runs || [];
-            core.info(`Checked ${runs.length} recent workflow run(s)`);
+          cat > .github/approve-open-pr-workflows.js <<'JS'
+const { Octokit } = require('@octokit/rest');
+const token = process.env.AUTO_APPROVE_TOKEN;
+if (!token) throw new Error('Secret AUTO_APPROVE_TOKEN or REPO_ADMIN_TOKEN is required');
+const octokit = new Octokit({ auth: token });
+const repo = process.env.GITHUB_REPOSITORY || '';
+const [owner, name] = repo.split('/');
+const dependabotOnly = (process.env.AUTO_APPROVE_DEPENDABOT || 'true').toLowerCase() === 'true';
+const wfFilterRaw = process.env.AUTO_APPROVE_WORKFLOWS || '';
+const wfFilters = wfFilterRaw ? wfFilterRaw.split('||').map(s=>s.trim()).filter(Boolean) : [];
 
-            let approved = 0;
+(async function(){
+  const { data: prs } = await octokit.rest.pulls.list({ owner, repo: name, state: 'open', per_page: 100 });
+  console.log(`Found ${prs.length} open PR(s)`);
 
-            for (const pr of prs) {
-              const prNumber = pr.number;
+  const runsResp = await octokit.rest.actions.listWorkflowRunsForRepo({ owner, repo: name, event: 'pull_request', per_page: 100 });
+  const runs = runsResp.data.workflow_runs || [];
+  console.log(`Checked ${runs.length} recent workflow run(s)`);
 
-              // Find runs that reference this PR and are waiting for approval
-              const matchingRuns = runs.filter(r => {
-                if (!r.pull_requests || r.pull_requests.length === 0) return false;
-                const touchesPr = r.pull_requests.some(x => x.number === prNumber);
-                const isWaiting = (r.status === 'waiting' || r.status === 'requested');
-                if (!touchesPr || !isWaiting) return false;
-                if (dependabotOnly) {
-                  const actor = (r.actor && r.actor.login) || '';
-                  if (!actor.toLowerCase().startsWith('dependabot')) return false;
-                }
-                // If workflow name filters provided, ensure run workflow matches
-                if (wfFilters.length > 0) {
-                  const wfName = (r.name || '').toString();
-                  return wfFilters.includes(wfName);
-                }
+  let approved = 0;
 
-                return true;
-              });
+  for (const pr of prs) {
+    const prNumber = pr.number;
+    const matchingRuns = runs.filter(r => {
+      if (!r.pull_requests || r.pull_requests.length === 0) return false;
+      const touchesPr = r.pull_requests.some(x => x.number === prNumber);
+      const isWaiting = (r.status === 'waiting' || r.status === 'requested');
+      if (!touchesPr || !isWaiting) return false;
+      if (dependabotOnly) {
+        const actor = (r.actor && r.actor.login) || '';
+        if (!actor.toLowerCase().startsWith('dependabot')) return false;
+      }
+      if (wfFilters.length > 0) {
+        const wfName = (r.name || '').toString();
+        return wfFilters.includes(wfName);
+      }
+      return true;
+    });
 
-              for (const run of matchingRuns) {
-                try {
-                  await octokit.request('POST /repos/{owner}/{repo}/actions/runs/{run_id}/approve', {
-                    owner,
-                    repo,
-                    run_id: run.id,
-                  });
-                  core.info(`Approved run ${run.id} for PR #${prNumber}`);
-                  approved++;
-                } catch (err) {
-                  core.warning(`Failed to approve run ${run.id} for PR #${prNumber}: ${err.message}`);
-                }
-              }
-            }
+    for (const run of matchingRuns) {
+      try {
+        await octokit.request('POST /repos/{owner}/{repo}/actions/runs/{run_id}/approve', {
+          owner,
+          repo: name,
+          run_id: run.id,
+        });
+        console.log(`Approved run ${run.id} for PR #${prNumber}`);
+        approved++;
+      } catch (err) {
+        console.warn(`Failed to approve run ${run.id} for PR #${prNumber}: ${err.message}`);
+      }
+    }
+  }
 
-            core.info(`Total approved runs: ${approved}`);
+  console.log(`Total approved runs: ${approved}`);
+})();
+JS
+
+          node .github/approve-open-pr-workflows.js
 
 
       - name: Apply repository settings
