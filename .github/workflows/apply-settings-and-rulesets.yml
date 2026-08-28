@@ -165,8 +165,8 @@ jobs:
           IFS='/' read -r OWNER NAME <<< "$REPO"
 
           # Fetch open PRs and recent workflow runs
-          gh api repos/$OWNER/$NAME/pulls --jq '.' > /tmp/prs.json
-          gh api repos/$OWNER/$NAME/actions/runs?event=pull_request --jq '.' > /tmp/runs.json
+          gh api repos/$OWNER/$NAME/pulls --jq '.' > /tmp/prs.json 2>/tmp/prs.err || true
+          gh api repos/$OWNER/$NAME/actions/runs?event=pull_request --jq '.' > /tmp/runs.json 2>/tmp/runs.err || true
 
           PR_COUNT=$(jq 'length' /tmp/prs.json)
           echo "Found ${PR_COUNT} open PR(s)"
@@ -176,7 +176,9 @@ jobs:
           # Validate runs JSON before processing to avoid "Unfinished string" errors
           if ! jq -e . /tmp/runs.json >/dev/null 2>&1; then
             echo "WARNING: /tmp/runs.json is not valid JSON. Showing raw content for debugging:";
-            sed -n '1,200p' /tmp/runs.json || true
+            echo "--- /tmp/runs.json (first 200 lines) ---"; sed -n '1,200p' /tmp/runs.json || true
+            echo "--- /tmp/runs.err (stderr from gh api) ---"; sed -n '1,200p' /tmp/runs.err || true
+            echo "--- /tmp/prs.err (stderr from gh api pulls) ---"; sed -n '1,200p' /tmp/prs.err || true
             echo "Skipping approval step due to invalid workflow run JSON.";
             exit 0
           fi
