@@ -214,7 +214,11 @@ jobs:
             PR_HEAD_SHA=$(echo "$row" | jq -r '.head.sha')
 
             # Find matching runs by PR number or head_sha and status
-            matches=$(jq -c --argjson prnum "$PR_NUMBER" --arg headsha "$PR_HEAD_SHA" '.workflow_runs[] | select((.pull_requests | any(.number == ($prnum))) or (.head_sha == $headsha)) | select(.status=="waiting" or .status=="requested")' /tmp/runs.json || true)
+            # Use --arg for safer string handling and convert prnum to number inside jq
+            matches=$(jq -c --arg prnum "$PR_NUMBER" --arg headsha "$PR_HEAD_SHA" '.workflow_runs[] | select((.pull_requests | any(.number == ($prnum|tonumber))) or (.head_sha == $headsha)) | select(.status=="waiting" or .status=="requested")' /tmp/runs.json 2>/tmp/jq_matches.err || true)
+            if [ -s /tmp/jq_matches.err ]; then
+              echo "jq matches error:"; sed -n '1,200p' /tmp/jq_matches.err || true
+            fi
 
             if [ -z "$matches" ]; then
               continue
