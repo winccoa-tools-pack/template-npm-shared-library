@@ -179,7 +179,9 @@ jobs:
           if ! jq -e . /tmp/prs.json >/dev/null 2>&1; then
             echo "WARNING: /tmp/prs.json is not valid JSON. Showing raw content for debugging:";
             echo "--- /tmp/prs.json (first 200 lines) ---"; sed -n '1,200p' /tmp/prs.json || true
-            echo "--- /tmp/prs.err (stderr from gh api pulls) ---"; sed -n '1,200p' /tmp/prs.err || true
+            echo "--- /tmp/prs.err (stderr from curl pulls) ---"; sed -n '1,200p' /tmp/prs.err || true
+            echo "--- /tmp/prs.json hexdump (first 512 bytes) ---";
+            if command -v xxd >/dev/null 2>&1; then xxd -g 1 -l 512 /tmp/prs.json || true; else od -An -tx1 -N512 /tmp/prs.json || true; fi
             echo "Skipping approval step due to invalid PRs JSON.";
             exit 0
           fi
@@ -187,8 +189,10 @@ jobs:
           if ! jq -e . /tmp/runs.json >/dev/null 2>&1; then
             echo "WARNING: /tmp/runs.json is not valid JSON. Showing raw content for debugging:";
             echo "--- /tmp/runs.json (first 200 lines) ---"; sed -n '1,200p' /tmp/runs.json || true
-            echo "--- /tmp/runs.err (stderr from gh api) ---"; sed -n '1,200p' /tmp/runs.err || true
-            echo "--- /tmp/prs.err (stderr from gh api pulls) ---"; sed -n '1,200p' /tmp/prs.err || true
+            echo "--- /tmp/runs.err (stderr from curl runs) ---"; sed -n '1,200p' /tmp/runs.err || true
+            echo "--- /tmp/runs.json hexdump (first 512 bytes) ---";
+            if command -v xxd >/dev/null 2>&1; then xxd -g 1 -l 512 /tmp/runs.json || true; else od -An -tx1 -N512 /tmp/runs.json || true; fi
+            echo "--- /tmp/prs.err (stderr from curl pulls) ---"; sed -n '1,200p' /tmp/prs.err || true
             echo "Skipping approval step due to invalid workflow run JSON.";
             exit 0
           fi
