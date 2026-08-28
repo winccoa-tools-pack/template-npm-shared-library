@@ -163,7 +163,8 @@ jobs:
             const repo = context.repo.repo;
             const token = process.env.AUTO_APPROVE_TOKEN;
             if (!token) throw new Error('Secret AUTO_APPROVE_TOKEN or REPO_ADMIN_TOKEN is required');
-            const octokit = github.getOctokit(token);
+            const { Octokit } = require('@octokit/rest');
+            const octokit = new Octokit({ auth: token });
             const dependabotOnly = (process.env.AUTO_APPROVE_DEPENDABOT || 'true').toLowerCase() === 'true';
             const wfFilterRaw = process.env.AUTO_APPROVE_WORKFLOWS || '';
             const wfFilters = wfFilterRaw ? wfFilterRaw.split('||').map(s=>s.trim()).filter(Boolean) : [];
