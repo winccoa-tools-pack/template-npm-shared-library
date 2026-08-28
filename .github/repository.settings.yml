@@ -40,3 +40,10 @@ auto_approve:
     - "CI/CD Pipeline"
     - "Git Flow Validation"
     - "PR Labels"
+
+# Actions permissions: control which actions are allowed to run in this repository.
+# Setting `allowed_actions: all` permits all GitHub Actions and third-party actions.
+# Use `selected` + `selected_actions.apps` to restrict to specific GitHub Apps if desired.
+actions_permissions:
+  enabled: true
+  allowed_actions: all

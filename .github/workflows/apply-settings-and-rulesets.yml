@@ -275,6 +275,34 @@ jobs:
               "repos/$OWNER/$NAME" --input repo_patch.json
           fi
 
+          # If repository.settings.yml contains an actions_permissions block, generate payload and apply
+          if [ -f .github/repository.settings.yml ]; then
+            python3 - <<'PY'
+            import yaml, json, sys
+            cfg = yaml.safe_load(open('.github/repository.settings.yml','r',encoding='utf-8')) or {}
+            ap = cfg.get('actions_permissions')
+            if ap:
+              out = {}
+              if 'enabled' in ap:
+                out['enabled'] = bool(ap['enabled'])
+              if 'allowed_actions' in ap:
+                out['allowed_actions'] = ap['allowed_actions']
+              if isinstance(ap.get('selected_actions'), dict) and 'apps' in ap.get('selected_actions'):
+                out['selected_actions'] = {'apps': ap['selected_actions']['apps']}
+              json.dump(out, open('actions_payload.json','w'), ensure_ascii=False)
+              print('WROTE actions_payload.json')
+            PY
+
+            if [ -f actions_payload.json ]; then
+              echo "Current Actions permissions for $OWNER/$NAME:" || true
+              gh api -H "Accept: application/vnd.github+json" "repos/$OWNER/$NAME/actions/permissions" || true
+              echo "Applying actions permissions from actions_payload.json"
+              gh api --method PUT -H "Accept: application/vnd.github+json" "repos/$OWNER/$NAME/actions/permissions" --input actions_payload.json || true
+            else
+              echo "No actions_permissions block found in .github/repository.settings.yml; skipping."
+            fi
+          fi
+
           if jq -e 'type=="array"' topics.json >/dev/null; then
             python3 -c "import json; t=json.load(open('topics.json','r',encoding='utf-8')); json.dump({'names': t}, open('topics_payload.json','w',encoding='utf-8'))"
             gh api --method PUT -H "Accept: application/vnd.github+json" \
