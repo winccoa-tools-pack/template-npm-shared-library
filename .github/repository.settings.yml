@@ -30,3 +30,13 @@ topics:
 security:
   enable_vulnerability_alerts: true
   enable_automated_security_fixes: true
+
+# Configuration for the manual "Approve Open PR Workflows" action.
+# Placing settings here keeps configuration with repository-managed settings.
+auto_approve:
+  dependabot_only: true
+  # List workflow names to target; empty list means any workflow triggered by PRs.
+  workflows:
+    - "CI/CD Pipeline"
+    - "Git Flow Validation"
+    - "PR Labels"
