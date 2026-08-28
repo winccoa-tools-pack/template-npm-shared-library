@@ -155,95 +155,76 @@ jobs:
             gh.write('AUTO_APPROVE_WORKFLOWS=' + '||'.join(workflows) + '\n')
           PY
 
-      - name: Setup Node 24 and approve waiting workflow runs for open PRs
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-
-      - name: Install runtime dependencies and run approver
+      - name: Approve waiting workflow runs for open PRs (using gh)
         shell: bash
         env:
-          AUTO_APPROVE_TOKEN: ${{ env.AUTO_APPROVE_TOKEN }}
+          GH_TOKEN: ${{ env.AUTO_APPROVE_TOKEN }}
         run: |
           set -euo pipefail
-          npm init -y >/dev/null
-          npm install @octokit/rest@^19 >/dev/null
-          # Allow packages with install scripts (esbuild etc.) when npm prompts
-          npm approve-scripts --allow-scripts-pending || true
+          REPO="${GITHUB_REPOSITORY}"
+          IFS='/' read -r OWNER NAME <<< "$REPO"
 
-          cat > .github/approve-open-pr-workflows.js <<'JS'
-          const { Octokit } = require('@octokit/rest');
-          const token = process.env.AUTO_APPROVE_TOKEN;
-          if (!token) throw new Error('Secret AUTO_APPROVE_TOKEN or REPO_ADMIN_TOKEN is required');
-          const octokit = new Octokit({ auth: token });
-          const repo = process.env.GITHUB_REPOSITORY || '';
-          const [owner, name] = repo.split('/');
-          const dependabotOnly = (process.env.AUTO_APPROVE_DEPENDABOT || 'true').toLowerCase() === 'true';
-          const wfFilterRaw = process.env.AUTO_APPROVE_WORKFLOWS || '';
-          const wfFilters = wfFilterRaw ? wfFilterRaw.split('||').map(s=>s.trim()).filter(Boolean) : [];
+          # Fetch open PRs and recent workflow runs
+          gh api repos/$OWNER/$NAME/pulls --jq '.' > /tmp/prs.json
+          gh api repos/$OWNER/$NAME/actions/runs?event=pull_request --jq '.' > /tmp/runs.json
 
-          (async function(){
-            const { data: prs } = await octokit.rest.pulls.list({ owner, repo: name, state: 'open', per_page: 100 });
-            console.log(`Found ${prs.length} open PR(s)`);
+          PR_COUNT=$(jq 'length' /tmp/prs.json)
+          echo "Found ${PR_COUNT} open PR(s)"
 
-            const runsResp = await octokit.rest.actions.listWorkflowRunsForRepo({ owner, repo: name, event: 'pull_request', per_page: 100 });
-            const runs = runsResp.data.workflow_runs || [];
-            console.log(`Checked ${runs.length} recent workflow run(s)`);
+          RUNS_COUNT=$(jq '.workflow_runs | length' /tmp/runs.json)
+          echo "Checked ${RUNS_COUNT} recent workflow run(s)"
 
-            // debug: print waiting runs summary
-            const waitingRuns = runs.filter(r => r.status === 'waiting' || r.status === 'requested');
-            console.log(`Waiting runs count: ${waitingRuns.length}`);
-            for (const r of waitingRuns.slice(0,50)) {
-              console.log(`RUN id=${r.id} name='${r.name}' status=${r.status} actor=${(r.actor&&r.actor.login)||''} prs=${JSON.stringify((r.pull_requests||[]).map(p=>p.number))}`);
-            }
+          # Debug waiting runs (first 50)
+          jq -r '.workflow_runs[] | select(.status=="waiting" or .status=="requested") | "RUN id="+.id|tostring+" name=\""+.name+"\" status="+.status+" actor="+((.actor.login) // "")+" prs="+([(.pull_requests[].number // empty)]|@csv)' /tmp/runs.json | sed 's/\[\]\|null//g' | head -n 50 || true
 
-            let approved = 0;
+          APPROVED=0
 
-            for (const pr of prs) {
-              const prNumber = pr.number;
-            const matchingRuns = runs.filter(r => {
-                if (!r.pull_requests || r.pull_requests.length === 0) return false;
-                const touchesPr = r.pull_requests.some(x => x.number === prNumber);
-                const isWaiting = (r.status === 'waiting' || r.status === 'requested');
-              if (!touchesPr || !isWaiting) {
-                // debug: log why this run was skipped for this PR
-                if (r.pull_requests && r.pull_requests.length>0) {
-                  const prNums = (r.pull_requests||[]).map(p=>p.number).join(',');
-                  console.log(`SKIP run ${r.id} for PR #${prNumber} (touches: ${prNums}, status: ${r.status}, actor: ${(r.actor&&r.actor.login)||''}, name: ${r.name})`);
-                }
-                return false;
-              }
-                if (dependabotOnly) {
-                  const actor = (r.actor && r.actor.login) || '';
-                  if (!actor.toLowerCase().startsWith('dependabot')) return false;
-                }
-                if (wfFilters.length > 0) {
-                  const wfName = (r.name || '').toString();
-                  return wfFilters.includes(wfName);
-                }
-                return true;
-              });
+          # Iterate PRs
+          for row in $(jq -c '.[]' /tmp/prs.json); do
+            PR_NUMBER=$(echo "$row" | jq -r '.number')
+            PR_HEAD_SHA=$(echo "$row" | jq -r '.head.sha')
 
-              for (const run of matchingRuns) {
-                try {
-                  await octokit.request('POST /repos/{owner}/{repo}/actions/runs/{run_id}/approve', {
-                    owner,
-                    repo: name,
-                    run_id: run.id,
-                  });
-                  console.log(`Approved run ${run.id} for PR #${prNumber}`);
-                  approved++;
-                } catch (err) {
-                  console.warn(`Failed to approve run ${run.id} for PR #${prNumber}: ${err.message}`);
-                }
-              }
-            }
+            # Find matching runs by PR number or head_sha and status
+            matches=$(jq -c --argjson prnum "$PR_NUMBER" --arg headsha "$PR_HEAD_SHA" '.workflow_runs[] | select((.pull_requests | any(.number == ($prnum))) or (.head_sha == $headsha)) | select(.status=="waiting" or .status=="requested")' /tmp/runs.json || true)
 
-            console.log(`Total approved runs: ${approved}`);
-          })();
-          JS
+            if [ -z "$matches" ]; then
+              continue
+            fi
 
-          node .github/approve-open-pr-workflows.js
+            while IFS= read -r run; do
+              RUN_ID=$(echo "$run" | jq -r '.id')
+              RUN_NAME=$(echo "$run" | jq -r '.name')
+              ACTOR=$(echo "$run" | jq -r '.actor.login // ""')
+
+              # respect dependabot-only setting
+              if [ "${AUTO_APPROVE_DEPENDABOT:-true}" = "true" ]; then
+                if [[ "${ACTOR,,}" != dependabot* ]]; then
+                  echo "SKIP run ${RUN_ID} for PR #${PR_NUMBER} (actor ${ACTOR})"
+                  continue
+                fi
+              fi
+
+              # respect workflow name filters
+              if [ -n "${AUTO_APPROVE_WORKFLOWS:-}" ]; then
+                IFS='||' read -ra WF <<< "${AUTO_APPROVE_WORKFLOWS}"
+                keep=false
+                for w in "${WF[@]}"; do
+                  if [ "$w" = "$RUN_NAME" ]; then keep=true; break; fi
+                done
+                if [ "$keep" = false ]; then
+                  echo "SKIP run ${RUN_ID} for PR #${PR_NUMBER} (workflow ${RUN_NAME} not in filter)"
+                  continue
+                fi
+              fi
+
+              # Approve
+              echo "Approving run ${RUN_ID} for PR #${PR_NUMBER} (workflow: ${RUN_NAME})"
+              gh api -X POST repos/$OWNER/$NAME/actions/runs/$RUN_ID/approve || echo "approve failed for $RUN_ID"
+              APPROVED=$((APPROVED+1))
+            done <<< "$matches"
+          done
+
+          echo "Total approved runs: ${APPROVED}"
 
 
       - name: Apply repository settings
