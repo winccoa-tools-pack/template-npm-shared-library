@@ -168,12 +168,15 @@ jobs:
           gh api repos/$OWNER/$NAME/pulls --jq '.' > /tmp/prs.json 2>/tmp/prs.err || true
           gh api repos/$OWNER/$NAME/actions/runs?event=pull_request --jq '.' > /tmp/runs.json 2>/tmp/runs.err || true
 
-          PR_COUNT=$(jq 'length' /tmp/prs.json)
-          echo "Found ${PR_COUNT} open PR(s)"
+          # Validate JSON responses from gh before using jq
+          if ! jq -e . /tmp/prs.json >/dev/null 2>&1; then
+            echo "WARNING: /tmp/prs.json is not valid JSON. Showing raw content for debugging:";
+            echo "--- /tmp/prs.json (first 200 lines) ---"; sed -n '1,200p' /tmp/prs.json || true
+            echo "--- /tmp/prs.err (stderr from gh api pulls) ---"; sed -n '1,200p' /tmp/prs.err || true
+            echo "Skipping approval step due to invalid PRs JSON.";
+            exit 0
+          fi
 
-          RUNS_COUNT=$(jq '.workflow_runs | length' /tmp/runs.json)
-          echo "Checked ${RUNS_COUNT} recent workflow run(s)"
-          # Validate runs JSON before processing to avoid "Unfinished string" errors
           if ! jq -e . /tmp/runs.json >/dev/null 2>&1; then
             echo "WARNING: /tmp/runs.json is not valid JSON. Showing raw content for debugging:";
             echo "--- /tmp/runs.json (first 200 lines) ---"; sed -n '1,200p' /tmp/runs.json || true
@@ -182,6 +185,12 @@ jobs:
             echo "Skipping approval step due to invalid workflow run JSON.";
             exit 0
           fi
+
+          PR_COUNT=$(jq 'length' /tmp/prs.json)
+          echo "Found ${PR_COUNT} open PR(s)"
+
+          RUNS_COUNT=$(jq '.workflow_runs | length' /tmp/runs.json)
+          echo "Checked ${RUNS_COUNT} recent workflow run(s)"
 
           # Debug waiting runs (first 50)
           jq -c '.workflow_runs[] | select(.status=="waiting" or .status=="requested") | {id: .id, name: .name, status: .status, actor: (.actor.login // ""), prs: ([.pull_requests[].number] // [])}' /tmp/runs.json | head -n 50 || true
