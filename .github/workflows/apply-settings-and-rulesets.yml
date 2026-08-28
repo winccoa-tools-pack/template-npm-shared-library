@@ -168,6 +168,12 @@ jobs:
           gh api repos/$OWNER/$NAME/pulls --jq '.' > /tmp/prs.json 2>/tmp/prs.err || true
           gh api repos/$OWNER/$NAME/actions/runs?event=pull_request --jq '.' > /tmp/runs.json 2>/tmp/runs.err || true
 
+          # Dump raw JSON for debugging (first 200 lines)
+          echo "--- RAW /tmp/prs.json (first 200 lines) ---"
+          sed -n '1,200p' /tmp/prs.json || true
+          echo "--- RAW /tmp/runs.json (first 200 lines) ---"
+          sed -n '1,200p' /tmp/runs.json || true
+
           # Validate JSON responses from gh before using jq
           if ! jq -e . /tmp/prs.json >/dev/null 2>&1; then
             echo "WARNING: /tmp/prs.json is not valid JSON. Showing raw content for debugging:";
