@@ -82,6 +82,28 @@ jobs:
           echo "--- security.json ---"; cat security.json; echo
           echo "--- rulesets ---"; ls -la ruleset_payloads || true
 
+      - name: Include actions policies as rulesets
+        id: include_policies
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ruleset_payloads
+          found=false
+          if [ -d .github/actions/policies ]; then
+            for f in .github/actions/policies/*.json; do
+              [ -e "$f" ] || continue
+              cp "$f" ruleset_payloads/ || true
+              found=true
+            done
+          fi
+          if [ "$found" = true ]; then
+            echo "has_policies=true" >> "$GITHUB_OUTPUT"
+            echo "Copied action policies into ruleset_payloads/"
+            ls -la ruleset_payloads || true
+          else
+            echo "has_policies=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Validate GitHub token (repo admin)
         if: ${{ steps.mode.outputs.mode == 'apply' }}
         shell: bash
@@ -154,7 +176,7 @@ jobs:
           fi
 
       - name: Upsert repository rulesets
-        if: ${{ steps.mode.outputs.mode == 'apply' && steps.prep.outputs.has_rulesets == 'true' }}
+        if: ${{ steps.mode.outputs.mode == 'apply' && (steps.prep.outputs.has_rulesets == 'true' || steps.include_policies.outputs.has_policies == 'true') }}
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.REPO_ADMIN_TOKEN != '' && secrets.REPO_ADMIN_TOKEN || github.token }}
