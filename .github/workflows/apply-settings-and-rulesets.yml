@@ -19,11 +19,6 @@ on:
         options:
           - dry-run
           - apply
-      approve_workflows:
-        description: "If true, run the approve-open-pr-workflows routine (uses REPO_ADMIN_TOKEN or AUTO_APPROVE_TOKEN)."
-        required: false
-        default: false
-        type: boolean
 
 permissions:
   contents: read
