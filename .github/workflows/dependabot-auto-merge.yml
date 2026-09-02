@@ -17,6 +17,11 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Debug show event actor
+        run: |
+          echo "github.actor=${{ github.actor }}"
+          echo "event_name=${{ github.event_name }}"
+          echo "GITHUB_EVENT_PATH=$GITHUB_EVENT_PATH"
       - name: Fetch Dependabot metadata
         id: metadata
         uses: dependabot/fetch-metadata@v1
