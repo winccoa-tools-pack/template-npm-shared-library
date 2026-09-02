@@ -37,7 +37,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Debug: show metadata outputs
+      - name: Debug show metadata outputs
         run: |
           echo "dependabot metadata:"
           echo "  update-type=${{ steps.metadata.outputs['update-type'] }}"
