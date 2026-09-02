@@ -13,6 +13,9 @@ jobs:
   auto-merge:
     runs-on: ubuntu-latest
     if: github.actor == 'dependabot[bot]'
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Fetch Dependabot metadata
         id: metadata
@@ -32,6 +35,14 @@ jobs:
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Debug: show metadata outputs
+        run: |
+          echo "dependabot metadata:"
+          echo "  update-type=${{ steps.metadata.outputs.update-type }}"
+          echo "  package-ecosystem=${{ steps.metadata.outputs.package-ecosystem }}"
+          echo "  directory=${{ steps.metadata.outputs.directory }}"
 
       - name: Approve Dependabot patch PR
         if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
