@@ -23,6 +23,14 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Ensure dependabot/patch label exists
+        run: |
+          if ! gh label view "dependabot/patch" >/dev/null 2>&1; then
+            gh label create "dependabot/patch" --color bfe5bf --description "Dependabot patch updates"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Add patch label
         if: ${{ steps.metadata.outputs['update-type'] == 'version-update:semver-patch' }}
         run: gh pr edit "$PR_URL" --add-label "dependabot/patch"
