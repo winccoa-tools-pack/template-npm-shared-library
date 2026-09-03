@@ -15,12 +15,12 @@ permissions:
 
 jobs:
   rebase-prs:
+    needs: rebase-and-handle
     uses: mPokornyETM/rebase-open-prs-action/.github/workflows/rebase-open-prs.yml@v1
     secrets:
       GH_PAT: ${{ github.token }}
   rebase-and-handle:
     runs-on: ubuntu-latest
-    needs: rebase-prs
     if: always()
     env:
       GH_TOKEN: ${{ github.token }}
