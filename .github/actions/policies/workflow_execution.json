@@ -6,38 +6,6 @@
   "source": "winccoa-tools-pack/template-npm-shared-library",
   "enforcement": "active",
   "conditions": {},
-  "rules": [
-    {
-      "type": "restrict_actions_actors",
-      "parameters": {
-        "allowed_actors": [
-          {
-            "id": 89339813,
-            "type": "User"
-          },
-          {
-            "id": 4,
-            "type": "RepositoryRole"
-          },
-          {
-            "id": 2,
-            "type": "RepositoryRole"
-          },
-          {
-            "id": 5,
-            "type": "RepositoryRole"
-          },
-          {
-            "id": 49699333,
-            "type": "Bot"
-          },
-          {
-            "id": 62310815,
-            "type": "Bot"
-          }
-        ]
-      }
-    }
-  ],
+  "rules": [],
   "bypass_actors": []
 }
