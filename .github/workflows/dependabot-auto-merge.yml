@@ -32,7 +32,7 @@ jobs:
 
       - name: Ensure dependabot/patch label exists
         run: |
-          if ! gh label view "dependabot/patch" >/dev/null 2>&1; then
+          if !gh label view "dependabot/patch" >/dev/null 2>&1; then
             gh label create "dependabot/patch" --color bfe5bf --description "Dependabot patch updates"
           fi
         env:
