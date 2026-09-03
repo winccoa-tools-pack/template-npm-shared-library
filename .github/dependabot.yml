@@ -21,6 +21,8 @@ updates:
     labels:
       - "dependencies"
       - "size/small"
+    # ensure that the PR are approved and merged automatically if the CI checks are passed
+      - "merge-in-1-day-without-review"
     # Group related updates together
     groups:
       # Group all TypeScript related dependencies
