@@ -1,6 +1,6 @@
 {
   "name": "@winccoa-tools-pack/npm-winccoa-template",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "Template for WinCC OA npm packages",
   "author": "winccoa-tools-pack",
   "license": "MIT",
