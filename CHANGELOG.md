@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-09-03
+
+### Changed
+
+- deps-dev(deps-dev): bump eslint from 9.39.3 to 9.39.5 (#80)
+- deps-dev(deps-dev): bump typescript-eslint from 8.56.1 to 8.68.0 (#78)
+- deps-dev(deps-dev): bump prettier (#74)
+- deps-dev(deps-dev): bump @types/node from 25.6.0 to 26.4.0 (#75)
+- deps-dev(deps-dev): bump markdownlint from 0.40.0 to 0.41.1 (#76)
+- reduce Node.js versions in CI/CD pipeline for faster execution (#92)
+- deps-dev(deps-dev): bump @humanfs/node from 0.16.7 to 0.16.8 (#86)
+- feat(DevOps) Update rebase-open-prs-action to use v1.2.4 (#91)
+- add workflow_dispatch to rebase-open-prs for manual runs (#90)
+- bump actions/checkout from 4 to 7 (#89)
+- Just next try to automate gh workflows (#88)
+- deps-dev(deps-dev): bump tsx from 4.23.12 to 4.23.13 (#87)
+- deps-dev(deps-dev): bump globals from 17.6.0 to 17.11.0 (#79)
+- bump actions/checkout from 6 to 7 (#83)
+- bump dependabot/fetch-metadata from 1 to 3 (#84)
+
 ## [0.2.0] - 2026-03-03
 
 ### Changed
