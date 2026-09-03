@@ -1,0 +1,24 @@
+name: Rebase open PRs
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+  # allow commenting on PRs and updating workflow files when needed
+  issues: write
+  
+jobs:
+  rebase:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mPokornyETM/rebase-open-prs-action@v1.2.4
+        with:
+          github-token: ${{ secrets.REPO_ADMIN_TOKEN  }}
+          skip-drafts: 'true'                    # Skip draft PRs (default: true)
+          skip-dependabot-rebase: 'true'         # Use @dependabot rebase comment (default: true)

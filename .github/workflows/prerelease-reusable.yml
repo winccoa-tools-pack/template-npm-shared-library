@@ -56,13 +56,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ inputs.target_branch != '' && inputs.target_branch || github.sha }}
 
       - name: Use Node.js 20.x
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 20.x
           cache: "npm"
@@ -124,7 +124,7 @@ jobs:
           retention-days: 14
 
       - name: Create GitHub prerelease
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
           name: ${{ format('🧪 Pre-Release {0}', steps.meta.outputs.tag) }}

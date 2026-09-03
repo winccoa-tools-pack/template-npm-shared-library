@@ -1,0 +1,22 @@
+lockfile_version: '1'
+generated_at: '2026-04-04T20:16:53.813632+00:00'
+apm_version: 0.8.10
+dependencies:
+- repo_url: winccoa-tools-pack/apm-npm-package
+  host: github.com
+  resolved_commit: 6c016fe09e0b7937167fe92d13dddf87746fa2e8
+  package_type: apm_package
+  content_hash: sha256:945e81f99759135fd187b11fcd9bc397c9fcfadfdafdaa0a5c439450c49a4f94
+- repo_url: winccoa-tools-pack/apm-org
+  host: github.com
+  resolved_commit: 4f5d718bf718c5bd526ccf21e5c76d9ad9935b81
+  package_type: apm_package
+  deployed_files:
+  - .github/skills/changelog
+  - .github/skills/conventional-commits
+  - .github/skills/create-pr
+  - .github/skills/create-skill
+  - .github/skills/git-flow
+  - .github/skills/labels
+  - .github/skills/versioning
+  content_hash: sha256:74498a32e3e73d54fbe9a743bdfa2d896ff2cf906339f24a6ce9cefe69998be3

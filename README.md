@@ -158,7 +158,7 @@ Special thanks to all our [contributors](https://github.com/orgs/winccoa-tools-p
 
 ## 📜 License
 
-This project is basically licensed under the **MIT License** - see the [LICENSE](https://github.com/winccoa-tools-pack/.github/blob/main/LICENSE) file for details.
+This project is licensed under the **MIT License** - see the [LICENSE](https://github.com/winccoa-tools-pack/.github/blob/main/LICENSE) file for details.
 
 It might happen that partial repositories contain third party SW which uses other license models.
 

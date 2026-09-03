@@ -30,3 +30,20 @@ topics:
 security:
   enable_vulnerability_alerts: true
   enable_automated_security_fixes: true
+
+# Configuration for the manual "Approve Open PR Workflows" action.
+# Placing settings here keeps configuration with repository-managed settings.
+auto_approve:
+  dependabot_only: true
+  # List workflow names to target; empty list means any workflow triggered by PRs.
+  workflows:
+    - "CI/CD Pipeline"
+    - "Git Flow Validation"
+    - "PR Labels"
+
+# Actions permissions: control which actions are allowed to run in this repository.
+# Setting `allowed_actions: all` permits all GitHub Actions and third-party actions.
+# Use `selected` + `selected_actions.apps` to restrict to specific GitHub Apps if desired.
+actions_permissions:
+  enabled: true
+  allowed_actions: all
