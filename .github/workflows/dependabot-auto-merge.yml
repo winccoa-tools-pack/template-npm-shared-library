@@ -12,6 +12,7 @@ permissions:
 jobs:
   auto-merge:
     runs-on: ubuntu-latest
+    if: ${{ github.actor == 'dependabot[bot]' || github.actor == 'github-actions[bot]' }}
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -22,14 +23,12 @@ jobs:
           echo "event_name=${{ github.event_name }}"
           echo "GITHUB_EVENT_PATH=$GITHUB_EVENT_PATH"
       - name: Fetch Dependabot metadata
-        if: ${{ startsWith(github.actor, 'dependabot') }}
         id: metadata
-        uses: dependabot/fetch-metadata@v1
+        uses: dependabot/fetch-metadata@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Ensure dependabot/patch label exists
-        if: ${{ startsWith(github.actor, 'dependabot') }}
         run: |
           if ! gh label view "dependabot/patch" >/dev/null 2>&1; then
             gh label create "dependabot/patch" --color bfe5bf --description "Dependabot patch updates"
@@ -45,7 +44,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update branch if behind
-        if: ${{ startsWith(github.actor, 'dependabot') }}
         run: gh pr update-branch --rebase "$PR_URL" || true
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
@@ -53,7 +51,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Debug show metadata outputs
-        if: ${{ startsWith(github.actor, 'dependabot') }}
         run: |
           echo "dependabot metadata:"
           echo "  update-type=${{ steps.metadata.outputs['update-type'] }}"
