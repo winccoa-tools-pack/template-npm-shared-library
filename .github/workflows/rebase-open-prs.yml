@@ -17,7 +17,7 @@ jobs:
   rebase:
     runs-on: ubuntu-latest
     steps:
-      - uses: mPokornyETM/rebase-open-prs-action@v1.2.3
+      - uses: mPokornyETM/rebase-open-prs-action@feature/recreate
         with:
           github-token: ${{ secrets.REPO_ADMIN_TOKEN  }}
           skip-drafts: 'true'                    # Skip draft PRs (default: true)
