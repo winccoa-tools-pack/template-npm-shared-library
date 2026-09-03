@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -12,43 +13,12 @@ permissions:
   # allow commenting on PRs and updating workflow files when needed
   issues: write
   
-
 jobs:
-  rebase-prs:
-    needs: rebase-and-handle
-    uses: mPokornyETM/rebase-open-prs-action/.github/workflows/rebase-open-prs.yml@v1
-    secrets:
-      GH_PAT: ${{ github.token }}
-  rebase-and-handle:
+  rebase:
     runs-on: ubuntu-latest
-    if: always()
-    env:
-      GH_TOKEN: ${{ github.token }}
-      GH_REPO: ${{ github.repository }}
     steps:
-      - name: Header
-        run: |
-          echo "Rebasing open PRs in $GH_REPO (will comment on failures)"
-
-      - name: Check GH CLI and auth
-        run: |
-          gh --version || true
-          gh auth status || true
-
-      - name: Rebase open PRs and handle failures
-        run: |
-          gh pr list --repo "$GH_REPO" --state open --base develop --json number,author,isDraft --jq '.[] | select(.isDraft == false) | "\(.number) \(.author.login)"' | while read pr author; do
-            echo "-> Updating branch for PR #$pr (author: $author)"
-            if gh pr update-branch --repo "$GH_REPO" --rebase "$pr"; then
-              echo "✓ PR branch updated for #$pr"
-            else
-              echo "⚠️ Failed to update #$pr"
-              if echo "$author" | grep -qi "dependabot"; then
-                echo "Posting @dependabot recreate on #$pr"
-                GH_TOKEN="${{ secrets.DEPENDABOT_COMMAND_TOKEN }}" gh pr comment "$pr" --repo "$GH_REPO" --body "@dependabot recreate" || echo "Failed to comment on #$pr"
-              else
-                echo "Posting maintainer notice on #$pr"
-                gh pr comment "$pr" --repo "$GH_REPO" --body "Automatic rebase failed for this PR — please rebase or resolve conflicts." || echo "Failed to comment on #$pr"
-              fi
-            fi
-          done
+      - uses: mPokornyETM/rebase-open-prs-action@v1.2.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          skip-drafts: 'true'                    # Skip draft PRs (default: true)
+          skip-dependabot-rebase: 'true'         # Use @dependabot rebase comment (default: true)
