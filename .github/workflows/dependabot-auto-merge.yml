@@ -23,7 +23,7 @@ jobs:
           echo "event_name=${{ github.event_name }}"
           echo "GITHUB_EVENT_PATH=$GITHUB_EVENT_PATH"
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Fetch Dependabot metadata
         id: metadata
         uses: dependabot/fetch-metadata@v3
@@ -60,14 +60,14 @@ jobs:
           echo "  directory=${{ steps.metadata.outputs['directory'] }}"
 
       - name: Approve Dependabot patch PR
-        if: ${{ startsWith(github.actor, 'dependabot') && steps.metadata.outputs['update-type'] == 'version-update:semver-patch' }}
+        if: ${{ steps.metadata.outputs['update-type'] == 'version-update:semver-patch' }}
         run: gh pr review --approve "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Enable auto-merge (squash) for patch updates
-        if: ${{ startsWith(github.actor, 'dependabot') && steps.metadata.outputs['update-type'] == 'version-update:semver-patch' }}
+        if: ${{ steps.metadata.outputs['update-type'] == 'version-update:semver-patch' }}
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
