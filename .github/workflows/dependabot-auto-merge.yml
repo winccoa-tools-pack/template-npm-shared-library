@@ -23,7 +23,7 @@ jobs:
           echo "event_name=${{ github.event_name }}"
           echo "GITHUB_EVENT_PATH=$GITHUB_EVENT_PATH"
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Fetch Dependabot metadata
         id: metadata
         uses: dependabot/fetch-metadata@v3
