@@ -47,3 +47,10 @@ auto_approve:
 actions_permissions:
   enabled: true
   allowed_actions: all
+
+# Default workflow permissions for the repository (controls GITHUB_TOKEN scope)
+# - default_workflow_permissions: one of 'read' or 'write'
+# - can_approve_pull_request_reviews: whether Actions can approve PRs
+workflow_permissions:
+  default_workflow_permissions: "read"
+  can_approve_pull_request_reviews: true
