@@ -1,0 +1,152 @@
+# Label definitions synced by .github/workflows/sync-labels.yml
+# (crazy-max/ghaction-github-labeler). Colors are hex without '#'.
+# Descriptions must stay <= 100 characters.
+
+# Priority
+- name: priority/critical
+  color: "e11d21"
+  description: "Must have for milestone, blocks other work"
+- name: priority/high
+  color: "eb6420"
+  description: "Important for milestone success"
+- name: priority/medium
+  color: "fbca04"
+  description: "Nice to have, can be moved to next milestone"
+- name: priority/low
+  color: "000000"
+  description: "Future consideration, not scheduled"
+
+# Type
+- name: enhancement
+  color: "a2eeef"
+  description: "New feature or improvement"
+- name: bug
+  color: "d73a4a"
+  description: "Something isn't working correctly"
+- name: documentation
+  color: "0075ca"
+  description: "Improvements or additions to documentation"
+- name: question
+  color: "d876e3"
+  description: "Further information is requested"
+- name: duplicate
+  color: "cfd3d7"
+  description: "This issue or pull request already exists"
+- name: invalid
+  color: "e4e669"
+  description: "This doesn't seem right"
+- name: wontfix
+  color: "ffffff"
+  description: "This will not be worked on"
+- name: breaking-change
+  color: "b60205"
+  description: "Introduces breaking changes (release planner: major bump)"
+
+# Component
+- name: core
+  color: "20e51d"
+  description: "Core library functionality"
+- name: api
+  color: "63ee9f"
+  description: "Public API and interfaces"
+- name: testing
+  color: "b9cb9e"
+  description: "Testing framework and test cases"
+- name: quality
+  color: "8bbf95"
+  description: "Code quality and static analysis"
+- name: configuration
+  color: "c4df5b"
+  description: "Configuration options"
+- name: integration
+  color: "0a2b57"
+  description: "Third-party integrations"
+
+# Status
+- name: needs-triage
+  color: "fbca04"
+  description: "New issue that needs initial review"
+- name: status/planning
+  color: "d4c5f9"
+  description: "In planning and design phase"
+- name: status/in-progress
+  color: "fbca04"
+  description: "Actively being worked on"
+- name: status/review
+  color: "7057ff"
+  description: "In code review or testing"
+- name: status/blocked
+  color: "000000"
+  description: "Blocked by dependency or external factor"
+- name: status/ready
+  color: "0e8a16"
+  description: "Ready for development to begin"
+
+# Special
+- name: good first issue
+  color: "7057ff"
+  description: "Good for newcomers"
+- name: help wanted
+  color: "008672"
+  description: "Extra attention is needed"
+- name: security
+  color: "1297fc"
+  description: "Security related issue"
+- name: performance
+  color: "fbca04"
+  description: "Performance improvement"
+- name: npm-library
+  color: "436ed9"
+  description: "Shared NPM library"
+
+# Set by .github/labeler.yml (actions/labeler) and Dependabot
+- name: dependencies
+  color: "0366d6"
+  description: "Pull requests that update dependencies"
+- name: dependabot/patch
+  color: "bfe5bf"
+  description: "Dependabot patch updates"
+- name: size/small
+  color: "6f42c1"
+  description: "Small change size"
+- name: area/build
+  color: "0e8a16"
+  description: "Build system or CI/CD pipeline"
+- name: source
+  color: "ededed"
+  description: "Changes in src/"
+- name: cli
+  color: "ededed"
+  description: "Changes in the command line interface"
+- name: ci
+  color: "d4a46e"
+  description: "GitHub workflows and CI configuration"
+- name: docs
+  color: "ededed"
+  description: "Changes in documentation files"
+- name: tests
+  color: "ededed"
+  description: "Changes in tests"
+- name: config
+  color: "ededed"
+  description: "Changes in tool configuration (tsconfig, eslint, prettier, markdownlint)"
+
+# Release flow
+- name: release
+  color: "ededed"
+  description: "Release or hotfix pull request"
+- name: chore
+  color: "ededed"
+  description: "Maintenance without functional change"
+- name: merge-in-3-days-without-review
+  color: "c2e0c6"
+  description: "Auto-approve countdown"
+- name: merge-in-2-days-without-review
+  color: "fbca04"
+  description: "Auto-approve countdown"
+- name: merge-in-1-day-without-review
+  color: "e99695"
+  description: "Auto-approve countdown"
+- name: merged-without-review
+  color: "d93f0b"
+  description: "Auto-approve countdown"
