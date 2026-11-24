@@ -92,8 +92,14 @@ jobs:
           if [ -d .github/actions/policies ]; then
             for f in .github/actions/policies/*.json; do
               [ -e "$f" ] || continue
-              cp "$f" ruleset_payloads/ || true
-              found=true
+              # Only include policies with a ruleset-compatible target
+              t=$(jq -r '.target // empty' "$f" 2>/dev/null || true)
+              if [ "$t" = "branch" ] || [ "$t" = "tag" ] || [ "$t" = "push" ]; then
+                cp "$f" ruleset_payloads/ || true
+                found=true
+              else
+                echo "Skipping $f (unsupported target: $t)"
+              fi
             done
           fi
           if [ "$found" = true ]; then
@@ -161,21 +167,7 @@ jobs:
 
           # If repository.settings.yml contains an actions_permissions block, generate payload and apply
           if [ -f .github/repository.settings.yml ]; then
-            python3 - <<'PY'
-            import yaml, json, sys
-            cfg = yaml.safe_load(open('.github/repository.settings.yml','r',encoding='utf-8')) or {}
-            ap = cfg.get('actions_permissions')
-            if ap:
-              out = {}
-              if 'enabled' in ap:
-                out['enabled'] = bool(ap['enabled'])
-              if 'allowed_actions' in ap:
-                out['allowed_actions'] = ap['allowed_actions']
-              if isinstance(ap.get('selected_actions'), dict) and 'apps' in ap.get('selected_actions'):
-                out['selected_actions'] = {'apps': ap['selected_actions']['apps']}
-              json.dump(out, open('actions_payload.json','w'), ensure_ascii=False)
-              print('WROTE actions_payload.json')
-            PY
+            python3 .github/scripts/generate_actions_payload.py
 
             if [ -f actions_payload.json ]; then
               echo "Current Actions permissions for $OWNER/$NAME:" || true
@@ -184,6 +176,16 @@ jobs:
               gh api --method PUT -H "Accept: application/vnd.github+json" "repos/$OWNER/$NAME/actions/permissions" --input actions_payload.json || true
             else
               echo "No actions_permissions block found in .github/repository.settings.yml; skipping."
+            fi
+
+            # If workflow-level permissions payload was generated, apply it
+            if [ -f workflow_payload.json ]; then
+              echo "Current workflow permissions for $OWNER/$NAME:" || true
+              gh api -H "Accept: application/vnd.github+json" "repos/$OWNER/$NAME/actions/permissions/workflow" || true
+              echo "Applying workflow permissions from workflow_payload.json"
+              gh api --method PUT -H "Accept: application/vnd.github+json" "repos/$OWNER/$NAME/actions/permissions/workflow" --input workflow_payload.json || true
+            else
+              echo "No workflow_permissions block found in .github/repository.settings.yml; skipping."
             fi
           fi
 

@@ -1,0 +1,41 @@
+name: Sync labels
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - .github/labels.yml
+      - .github/workflows/sync-labels.yml
+  schedule:
+    - cron: "0 6 * * 1" # Monday 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only show the changes, apply nothing"
+        type: boolean
+        default: true
+      skip_delete:
+        description: "Keep labels that are not listed in .github/labels.yml"
+        type: boolean
+        default: true
+
+permissions: {}
+
+jobs:
+  labels:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Sync labels
+        uses: crazy-max/ghaction-github-labeler@v6
+        with:
+          yaml-file: .github/labels.yml
+          # Only a manual run with skip_delete=false may remove labels.
+          skip-delete: ${{ github.event_name != 'workflow_dispatch' || inputs.skip_delete }}
+          dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}

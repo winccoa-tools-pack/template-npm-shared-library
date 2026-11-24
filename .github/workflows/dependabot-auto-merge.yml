@@ -32,14 +32,27 @@ jobs:
 
       - name: Ensure dependabot/patch label exists
         run: |
-          if !gh label view "dependabot/patch" >/dev/null 2>&1; then
-            gh label create "dependabot/patch" --color bfe5bf --description "Dependabot patch updates"
+          set -euo pipefail
+          REPO="${{ github.repository }}"
+          echo "Checking label in $REPO"
+          if ! gh label view "dependabot/patch" --repo "$REPO" >/dev/null 2>&1; then
+            echo "Label not found; creating dependabot/patch"
+            # Use the REST API to create label (more explicit and robust)
+            gh api --method POST \
+              -H "Accept: application/vnd.github+json" \
+              "/repos/$REPO/labels" \
+              -f name='dependabot/patch' \
+              -f color='bfe5bf' \
+              -f description='Dependabot patch updates' || true
+          else
+            echo "Label exist: dependabot/patch"
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
 
       - name: Add patch label
-        if: ${{ startsWith(github.actor, 'dependabot') && steps.metadata.outputs['update-type'] == 'version-update:semver-patch' }}
+        if: ${{ startsWith(github.actor, 'dependabot') && (steps.metadata.outputs['update-type'] == 'version-update:semver-patch' || steps.metadata.outputs['update-type'] == 'version-update:semver-minor') }}
         run: gh pr edit "$PR_URL" --add-label "dependabot/patch"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
@@ -60,14 +73,14 @@ jobs:
           echo "  directory=${{ steps.metadata.outputs['directory'] }}"
 
       - name: Approve Dependabot patch PR
-        if: ${{ steps.metadata.outputs['update-type'] == 'version-update:semver-patch' }}
+        if: ${{ steps.metadata.outputs['update-type'] == 'version-update:semver-patch' || steps.metadata.outputs['update-type'] == 'version-update:semver-minor' }}
         run: gh pr review --approve "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Enable auto-merge (squash) for patch updates
-        if: ${{ steps.metadata.outputs['update-type'] == 'version-update:semver-patch' }}
+        if: ${{ steps.metadata.outputs['update-type'] == 'version-update:semver-patch' || steps.metadata.outputs['update-type'] == 'version-update:semver-minor' }}
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}

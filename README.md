@@ -6,6 +6,16 @@ THIS IS AN EXAMPLE README
 
 # WinCC OA UI PNL/XML Converter
 
+<!-- markdownlint-disable MD033 -->
+<div align="center">
+
+[![npm version](https://img.shields.io/npm/v/@winccoa-tools-pack/npm-winccoa-template.svg?label=npm)](https://www.npmjs.com/package/@winccoa-tools-pack/npm-winccoa-template)
+![License](https://img.shields.io/github/license/winccoa-tools-pack/template-npm-shared-library)
+[![CI/CD](https://github.com/winccoa-tools-pack/template-npm-shared-library/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/winccoa-tools-pack/template-npm-shared-library/actions/workflows/ci-cd.yml)
+[![Release](https://github.com/winccoa-tools-pack/template-npm-shared-library/actions/workflows/release.yml/badge.svg)](https://github.com/winccoa-tools-pack/template-npm-shared-library/actions/workflows/release.yml)
+
+</div>
+
 A lightweight developer tool for SIMATIC WinCC Open Architecture projects, providing reliable PNL ⇄ XML transformations for UI panels.
 This package is part of the modular winccoa-tools-pack ecosystem, which delivers modern development tooling,
 reusable libraries, and VS Code extensions for WinCC OA engineers.
