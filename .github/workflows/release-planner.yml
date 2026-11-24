@@ -1,0 +1,25 @@
+name: Release Planner
+
+on:
+  schedule:
+    - cron: "0 20 * * 2" # Tuesday 20:00 UTC (cron is always UTC)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only print the plan, change nothing"
+        type: boolean
+        default: true
+
+permissions: {}
+
+jobs:
+  plan:
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    uses: winccoa-tools-pack/.github/.github/workflows/reusable-release-planner.yml@main
+    secrets: inherit
+    with:
+      dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+      project_type: npm
