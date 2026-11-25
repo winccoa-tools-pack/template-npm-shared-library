@@ -104,145 +104,18 @@ jobs:
         env:
           CI: true
 
-  integration-winccoa:
-    name: Integration Tests - WinCC OA
+  # Integration tests are manual until a working Docker setup exists (winccoa-tools-pack/.github#117).
+  # This job only reminds PR authors; it never fails the pipeline.
+  limited-tests-notice:
+    name: Limited tests notice
     needs: [test]
     if: ${{ needs.test.result == 'success' }}
-    runs-on: ubuntu-latest
-    env:
-      WORKDIR: /workspace
-      IMAGE_NAME: mpokornyetm/winccoa-tools-pack-npm-winccoa-core:npm-winccoa-core
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-      - name: Set up Swap Space
-        uses: pierotofy/set-swap-space@master
-        with:
-          swap-size-gb: 4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-      - name: Login to Docker Hub (optional)
-        shell: bash
-        env:
-          DOCKER_USER: ${{ secrets.DOCKER_USER }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: |
-          set -euo pipefail
-          if [ -n "${DOCKER_USER:-}" ] && [ -n "${DOCKER_PASSWORD:-}" ]; then
-            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
-          else
-            echo "Docker credentials not available, attempting to pull public image"
-          fi
-      - name: Pull WinCC OA image
-        shell: bash
-        run: |
-          set -euo pipefail
-          docker pull "$IMAGE_NAME"
-      - name: Verify runnable fixture config exists
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f "./test/fixtures/projects/runnable/config/config"
-      - name: Install dependencies (host)
-        run: npm ci
-      - name: Build package (host)
-        run: npm run build
-      - name: Run WinCC OA container
-        shell: bash
-        run: |
-          set -euo pipefail
-          docker run -d --name winccoa-ci \
-            --shm-size=2g \
-            --memory=8g \
-            -v "$GITHUB_WORKSPACE":$WORKDIR:rw \
-            -e CI=true \
-            -e OAINST=/opt/WinCC_OA \
-            -e OAPROJ=$WORKDIR/test/fixtures/projects/runnable \
-            -w $WORKDIR \
-            "$IMAGE_NAME" bash -lc 'sleep 2'
-      - name: Verify Xvfb available
-        shell: bash
-        run: |
-          set -euo pipefail
-          docker exec --user root winccoa-ci sh -c 'command -v xvfb-run >/dev/null 2>&1 || (echo "::error::xvfb-run not found in container"; exit 1)'
-      - name: Run all integration tests inside container
-        shell: bash
-        run: |
-          set -uo pipefail
-          EXIT_CODE=0
-          docker exec --user root winccoa-ci sh -c '
-            set -e
-            echo "Node version: $(node -v)"
-            echo "Running all integration tests..."
-            xvfb-run -s "-screen 0 1280x1024x24" node --import tsx scripts/run-node-tests.ts test/integration
-          ' || EXIT_CODE=$?
-          
-          # Exit code 137 = OOM killed by kernel. GitHub runners have limited memory.
-          # Integration tests require WinCC OA + VS Code + Electron which exceeds CI limits.
-          # PR authors must confirm local run passed (see integration test output for copy-paste template).
-          if [ "$EXIT_CODE" -eq 137 ]; then
-            echo "::warning::Integration tests were OOM-killed (exit 137). PR author must confirm local run passed."
-            echo "OOM_KILLED=true" >> "$GITHUB_ENV"
-            
-            # Write summary for both step summary and PR comment
-            {
-              echo "## ⚠️ Integration Tests: Manual Confirmation Required"
-              echo ""
-              echo "The integration tests were killed due to memory limits (exit code 137)."
-              echo ""
-              echo "**PR author**: Please run integration tests locally and paste the result in the PR:"
-              echo ""
-              echo "\`\`\`bash"
-              echo "npm run test:integration"
-              echo "\`\`\`"
-              echo ""
-              echo "Copy the **Local Integration Test Result** block from the test output into this PR."
-            } | tee -a "$GITHUB_STEP_SUMMARY" > /tmp/oom-comment.md
-            exit 0
-          elif [ "$EXIT_CODE" -ne 0 ]; then
-            echo "::error::Integration tests failed with exit code $EXIT_CODE"
-            exit $EXIT_CODE
-          fi
-      - name: Post OOM warning as PR comment
-        if: ${{ always() && github.event_name == 'pull_request' && env.OOM_KILLED == 'true' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          gh pr comment "${{ github.event.pull_request.number }}" \
-            --repo "${{ github.repository }}" \
-            --body-file /tmp/oom-comment.md
-      - name: Capture system resource usage
-        if: ${{ always() }}
-        shell: bash
-        run: |
-          echo "==== Host System Memory Usage ===="
-          free -h
-          echo ""
-          echo "==== Top 20 Processes by Memory (Host) ===="
-          ps aux --sort=-%mem | head -21
-          echo ""
-          echo "==== Top 20 Processes by CPU (Host) ===="
-          ps aux --sort=-%cpu | head -21
-          echo ""
-          echo "==== Docker Container Stats ===="
-          docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}" || true
-          echo ""
-          echo "==== Processes inside Container ===="
-          docker exec winccoa-ci ps aux --sort=-%mem 2>/dev/null | head -21 || echo "(container not running)"
-      - name: Collect logs on failure
-        if: ${{ failure() }}
-        shell: bash
-        run: |
-          echo "==== docker logs ===="
-          docker logs winccoa-ci || true
-          echo "==== dmesg (check for OOM Killer) ===="
-          dmesg | tail -n 50 || true
-      - name: Stop and remove container
-        if: ${{ always() }}
-        shell: bash
-        run: |
-          docker rm -f winccoa-ci || true
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: winccoa-tools-pack/.github/.github/workflows/reusable-limited-tests-notice.yml@main
+    with:
+      integration_command: npm run test:integration
 
   required:
     name: CI/CD Pipeline - Required
@@ -252,7 +125,6 @@ jobs:
       - lint
       - format
       - test
-      - integration-winccoa
     steps:
       - name: Verify required jobs
         shell: bash
@@ -262,7 +134,6 @@ jobs:
             "lint:${{ needs.lint.result }}"
             "format:${{ needs.format.result }}"
             "test:${{ needs.test.result }}"
-            "integration-winccoa:${{ needs['integration-winccoa'].result }}"
           )
           echo "Job results:"
           printf ' - %s\n' "${RESULTS[@]}"
