@@ -17,8 +17,15 @@ jobs:
   rebase:
     runs-on: ubuntu-latest
     steps:
+      - name: Create bot token
+        id: bot
+        continue-on-error: true
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
       - uses: mPokornyETM/rebase-open-prs-action@v1.2.4
         with:
-          github-token: ${{ secrets.REPO_ADMIN_TOKEN  }}
+          github-token: ${{ steps.bot.outputs.token || secrets.REPO_ADMIN_TOKEN }}
           skip-drafts: 'true'                    # Skip draft PRs (default: true)
           skip-dependabot-rebase: 'true'         # Use @dependabot rebase comment (default: true)

@@ -49,11 +49,18 @@ jobs:
   create:
     runs-on: ubuntu-latest
     steps:
+      - name: Create bot token
+        id: bot
+        continue-on-error: true
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
       - name: Create branch (release/hotfix)
         id: branch
         uses: actions/github-script@v9
         with:
-          github-token: ${{ secrets.REPO_ADMIN_TOKEN != '' && secrets.REPO_ADMIN_TOKEN || github.token }}
+          github-token: ${{ steps.bot.outputs.token || secrets.REPO_ADMIN_TOKEN || github.token }}
           script: |
             const kind = String(context.payload.inputs?.kind || 'release').trim();
             const rawVersion = (context.payload.inputs?.version || '').trim();
@@ -212,7 +219,7 @@ jobs:
         id: pr
         uses: actions/github-script@v9
         with:
-          github-token: ${{ secrets.REPO_ADMIN_TOKEN != '' && secrets.REPO_ADMIN_TOKEN || github.token }}
+          github-token: ${{ steps.bot.outputs.token || secrets.REPO_ADMIN_TOKEN || github.token }}
           script: |
             const kind = String('${{ steps.branch.outputs.kind }}');
             const version = String('${{ steps.branch.outputs.version }}');
