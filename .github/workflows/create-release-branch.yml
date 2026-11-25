@@ -60,7 +60,7 @@ jobs:
         id: branch
         uses: actions/github-script@v9
         with:
-          github-token: ${{ steps.bot.outputs.token || secrets.REPO_ADMIN_TOKEN || github.token }}
+          github-token: ${{ secrets.REPO_ADMIN_TOKEN || steps.bot.outputs.token || github.token }}
           script: |
             const kind = String(context.payload.inputs?.kind || 'release').trim();
             const rawVersion = (context.payload.inputs?.version || '').trim();
@@ -219,7 +219,7 @@ jobs:
         id: pr
         uses: actions/github-script@v9
         with:
-          github-token: ${{ steps.bot.outputs.token || secrets.REPO_ADMIN_TOKEN || github.token }}
+          github-token: ${{ secrets.REPO_ADMIN_TOKEN || steps.bot.outputs.token || github.token }}
           script: |
             const kind = String('${{ steps.branch.outputs.kind }}');
             const version = String('${{ steps.branch.outputs.version }}');

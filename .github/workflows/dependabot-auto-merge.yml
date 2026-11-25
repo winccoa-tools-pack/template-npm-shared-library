@@ -91,4 +91,5 @@ jobs:
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ steps.bot.outputs.token || secrets.GITHUB_TOKEN }}
+          # A merge by the bot app does not start workflows (org .github issue 121), so a user token is preferred.
+          GH_TOKEN: ${{ secrets.REPO_ADMIN_TOKEN || steps.bot.outputs.token || secrets.GITHUB_TOKEN }}

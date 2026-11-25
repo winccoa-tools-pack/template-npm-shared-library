@@ -15,9 +15,9 @@ permissions: {}
 
 jobs:
   upmerge:
-    # The reusable workflow creates its token from the winccoa-tools-pack-bot app
-    # (BOT_APP_ID / BOT_PRIVATE_KEY, passed by `secrets: inherit`), so the upmerge
-    # branch and PR are authored by the bot; it falls back to REPO_ADMIN_TOKEN.
+    # The reusable workflow prefers REPO_ADMIN_TOKEN and falls back to the
+    # winccoa-tools-pack-bot app token (BOT_APP_ID / BOT_PRIVATE_KEY, passed by
+    # `secrets: inherit`). Pushes by the bot app do not start workflows (org .github issue 121).
     permissions:
       contents: write
       pull-requests: write

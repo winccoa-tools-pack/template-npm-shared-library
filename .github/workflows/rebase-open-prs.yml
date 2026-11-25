@@ -26,6 +26,6 @@ jobs:
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
       - uses: mPokornyETM/rebase-open-prs-action@v1.2.4
         with:
-          github-token: ${{ steps.bot.outputs.token || secrets.REPO_ADMIN_TOKEN }}
+          github-token: ${{ secrets.REPO_ADMIN_TOKEN || steps.bot.outputs.token }}
           skip-drafts: 'true'                    # Skip draft PRs (default: true)
           skip-dependabot-rebase: 'true'         # Use @dependabot rebase comment (default: true)
