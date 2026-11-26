@@ -25,8 +25,17 @@ jobs:
   countdown:
     runs-on: ubuntu-latest
     steps:
+      # Merges with GITHUB_TOKEN do not start CI/Release/Upmerge; the app token does.
+      - name: Create bot token
+        id: bot
+        continue-on-error: true
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.BOT_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
       - uses: mPokornyETM/auto-approve-stale-prs@v1
         with:
+          token: ${{ steps.bot.outputs.token || github.token }}
           days-until-approve: '3'
           author-associations: 'OWNER'
           merge-method: 'squash'
