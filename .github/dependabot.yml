@@ -7,7 +7,7 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     # typescript-eslint does not accept TypeScript 7 yet and ESLint 10 is not supported by the lint plugins (npm ci fails with ERESOLVE).
-    # Remove these rules when tracking issue #136 is done.
+    # Remove these rules when the TypeScript 7 / ESLint 10 upgrade (see the open tracking issue of this repository) is done.
     ignore:
       - dependency-name: "typescript"
         versions: [">=7.0.0"]
