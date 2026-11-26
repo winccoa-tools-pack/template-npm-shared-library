@@ -98,6 +98,9 @@
 - name: npm-library
   color: "436ed9"
   description: "Shared NPM library"
+- name: not-published-to-npm
+  color: "e99695"
+  description: "Package is not published to npm yet (first release pending)"
 
 # Set by .github/labeler.yml (actions/labeler) and Dependabot
 - name: dependencies
